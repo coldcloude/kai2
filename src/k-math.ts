@@ -1,0 +1,74 @@
+const NUM2HEX = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
+const HEX2NUM = new Map<string,number>();
+for(let i=0; i<NUM2HEX.length; i++){
+	HEX2NUM.set(NUM2HEX[i],i);
+}
+
+export function byte2hex(byte:number):string{
+	return NUM2HEX[(byte>>4)&0x0F]+NUM2HEX[byte&0x0F];
+}
+
+export function hex2byte(hex:string):number{
+	return uint8((((HEX2NUM.get(hex[0])||0)<<4)|(HEX2NUM.get(hex[1])||0)));
+}
+
+function UIntN(N:number):(n:number)=>number{
+	const mask = 0xFFFFFFFF>>>32-N;
+	return function(n){
+		return (n&mask)>>>0;
+	};
+}
+
+const uint8 = UIntN(8);
+const uint16 = UIntN(16);
+const uint32 = UIntN(32);
+
+export {
+	uint8,
+	uint16,
+	uint32
+};
+
+export function uintN(n:number,N:number):number{
+	return (n&(0xFFFFFFFF>>>32-N))>>>0;
+}
+
+export function max(...arr:number[]):number|undefined{
+	let rst:number|undefined = undefined;
+	for(const n of arr){
+		rst = rst?Math.max(rst,n):n;
+	}
+	return rst;
+}
+
+export function min(...arr:number[]):number | undefined{
+	let rst:number|undefined = undefined;
+	for(const n of arr){
+		rst = rst?Math.min(rst,n):n;
+	}
+	return rst;
+}
+
+export function fix0Cycle(num:number,top:number):number{
+	while(num<0){
+		num += top;
+	}
+	while(num>=top){
+		num -= top;
+	}
+	return num;
+}
+
+export function fix0Symmetric(num:number,s:number){
+	const top = s*2;
+	num = fix0Cycle(num,top);
+	return num>s?top-num:num;
+}
+
+export function pad0(num:number,len:number,radix:number):string{
+	let str = num.toString(radix);
+	while(str.length<len){
+		str = "0"+str;
+	}
+	return str;
+}
