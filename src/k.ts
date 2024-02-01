@@ -1,5 +1,3 @@
-export type KAsync<T,R> = (cb:(r:R)=>void,v:T)=>void
-
 export function memset<T>(a:T[],o:number,val:T,len:number){
 	for(let i=0; i<len; i++){
 		a[o+i] = val;
@@ -154,31 +152,29 @@ export class KList<T> {
 	}
 }
 
-export type KEventHandler<T,C> = (val:T,ctx?:C)=>void
-
-export type KEventNodeHandler<T,C> = KListNode<KEventHandler<T,C>>
+export type KEventNode<T,C> = KListNode<(v:T,c?:C)=>void>;
 
 export class KEvent<T,C> {
 
 	context:C|undefined;
-	handlers:KList<KEventHandler<T,C>> = new KList();
+	handlers:KList<(v:T,c?:C)=>void> = new KList();
 
 	constructor(context?:C){
 		this.context = context;
 	}
 
-	register(h:KEventHandler<T,C>):KEventNodeHandler<T,C>{
+	register(h:(v:T,c?:C)=>void):KEventNode<T,C>{
 		return this.handlers.push(h);
 	}
 
 	trigger(value:T){
-		this.handlers.foreach((h$:KEventNodeHandler<T,C>)=>{
+		this.handlers.foreach((h$:KEventNode<T,C>)=>{
 			h$.value(value,this.context);
 		});
 	}
 
-	once(h:KEventHandler<T,C>){
-		let h$:KEventNodeHandler<T,C>|undefined = undefined;
+	once(h:(v:T,c?:C)=>void){
+		let h$:KEventNode<T,C>|undefined = undefined;
 		h$ = this.register((v,c)=>{
 			h$?.remove();
 			h(v,c);
@@ -198,15 +194,11 @@ export class KLoader{
 		}
 	}
 
-	onDone(h:KEventHandler<void,void>):KEventNodeHandler<void,void>{
-		return this.event.register(h);
+	onDone(h:()=>void){
+		this.event.register(h);
 	}
 
-	/**
-	 * 
-	 * @param {KAsync<void,void>} op 
-	 */
-	load(op:KAsync<void,void>){
+	load(op:(cb:()=>void)=>void){
 		this.count++;
 		op(()=>{
 			this.complete();
