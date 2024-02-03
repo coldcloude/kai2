@@ -156,15 +156,24 @@ export type KEventNode<T,C> = KListNode<(v:T,c?:C)=>void>;
 
 export class KEvent<T,C> {
 
+	capacity = 0;
+
 	context:C|undefined;
 	handlers:KList<(v:T,c?:C)=>void> = new KList();
 
-	constructor(context?:C){
+	constructor(capacity?:number,context?:C){
+		if(capacity){
+			this.capacity = capacity;
+		}
 		this.context = context;
 	}
 
 	register(h:(v:T,c?:C)=>void):KEventNode<T,C>{
-		return this.handlers.push(h);
+		const r = this.handlers.push(h);
+		if(this.handlers.size>this.capacity){
+			this.handlers.shift();
+		}
+		return r;
 	}
 
 	trigger(value:T){
