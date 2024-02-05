@@ -2,10 +2,14 @@ import testMath from "./test-math.js";
 
 testMath();
 
-import testLoader from "./test-loader.js";
+import testRandom from "./test-math-random.js";
 
-testLoader();
+testRandom();
 
 import testTree from "./test-tree.js";
 
 testTree();
+
+import testLoader from "./test-loader.js";
+
+testLoader();
