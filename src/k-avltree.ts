@@ -1,18 +1,51 @@
+function setAsSide<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null,side:number){
+	if(parent!==null){
+		switch(side){
+			case -1:
+				parent.left = node;
+				break;
+			case 1:
+				parent.right = node;
+				break;
+		}
+	}
+	if(node!==null){
+		node.parent = parent;
+		node._side = side;
+	}
+}
+function setAsLeft<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
+	if(parent!==null){
+		parent.left = node;
+	}
+	if(node!==null){
+		node.parent = parent;
+		node._side = -1;
+	}
+}
+function setAsRight<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
+	if(parent!==null){
+		parent.right = node;
+	}
+	if(node!==null){
+		node.parent = parent;
+		node._side = 1;
+	}
+}
+
 export class KTreeNode<K,V> {
 
 	key:K;
 	value:V|undefined;
-	tree:KTree<K,V>;
 
 	parent:KTreeNode<K,V>|null = null;
 	left:KTreeNode<K,V>|null = null;
 	right:KTreeNode<K,V>|null = null;
 	_height:number = 1;
 	_factor:number = 0;
-	_direction:number = 0;
+	_side:number = 0;
 
-	constructor(tree:KTree<K,V>,key:K,value?:V){
-		this.tree = tree;
+	constructor(key:K,value?:V){
 		this.key = key;
 		this.value = value;
 	}
@@ -23,230 +56,190 @@ export class KTreeNode<K,V> {
 		this._height = Math.max(leftHeight,rightHeight)+1;
 		this._factor = rightHeight-leftHeight;
 	}
-	_rotateLeft(){
+	_rotateLeft():KTreeNode<K,V>{
         /*
-                x(2)                       y(0)
+                c(2)                       r(0)
                / \          ==>           /  \
-             [a]  y(1)                   x(0) c
+             [l]  r(1)                   c(0) rr
                  / \                    / \
-               [b]  c                 [a] [b]
+               [rl] rr                [l] [rl]
         */
-		const subR = this.right!;
-		//set y to root
-		subR.parent = this.parent;
-		subR._direction = this._direction;
-		if(subR.parent!==null){
-			if(subR._direction===-1){
-				subR.parent.left = subR;
-			}
-			else{
-				subR.parent.right = subR;
-			}
-		}
-		//set b to x right
-		this.right = subR.left;
-		if(this.right!=null){
-			this.right.parent = this;
-			this.right._direction = 1;
-		}
-		//set x to y left
-		subR.left = this;
-		this.parent = subR;
-		this._direction = -1;
+        /*
+                c(2)                       r(-1)
+               / \          ==>           /  \
+             [l]  r(0)                   c(1) rr
+                 / \                    / \
+                rl rr                 [l]  rl
+        */
+		const r = this.right!;
+		//set r to root
+		setAsSide(r,this.parent,this._side);
+		//set rl to c right
+		setAsRight(r.left,this);
+		//set c to r left
+		setAsLeft(this,r);
 		//reset statistic
 		this._update();
-		subR._update();
+		r._update();
+		//return new root
+		return r;
 	}
-	_rotateRight(){
+	_rotateRight():KTreeNode<K,V>{
         /*
-                 x(-2)                  y(0)
+                 c(-2)                  l(0)
                /    \        ==>       /  \
-              y(-1) [c]               a    x(0)
+              l(-1) [r]               ll   c(0)
              / \                          / \
-            a  [b]                      [b] [c]
+            ll [lr]                     [lr] [r]
         */
-		const subL = this.left!;
-		//set y to root
-		subL.parent = this.parent;
-		subL._direction = this._direction;
-		if(subL.parent!==null){
-			if(subL._direction===-1){
-				subL.parent.left = subL;
-			}
-			else{
-				subL.parent.right = subL;
-			}
-		}
-		//set b to x left
-		this.left = subL.right;
-		if(this.left!=null){
-			this.left.parent = this;
-			this.left._direction = -1;
-		}
-		//set x to y right
-		subL.right = this;
-		this.parent = subL;
-		this._direction = 1;
-		//reset statistic
-		this._update();
-		subL._update();
-	}
-	_rotateLeftRight(){
         /*
-                |                               |
-                a(-2)                           c
-               / \                             / \
-              /   \        ==>                /   \
-          (1)b    [g]                        b     a
-            / \                             / \   / \
-          [d]  c                          [d] e  f  [g]
-              / \
-             e   f
+                 c(-2)                  l(1)
+               /    \        ==>       /  \
+              l(0)  [r]               ll   c(-1)
+             / \                          / \
+            ll lr                        lr [r]
         */
-		const subL = this.left!;
-		const subLR = subL.right!;
-		//set c to root
-		subLR.parent = this.parent;
-		subLR._direction = this._direction;
-		if(subLR.parent!==null){
-			if(subLR._direction===-1){
-				subLR.parent.left = subLR;
-			}
-			else{
-				subLR.parent.right = subLR;
-			}
-		}
-		//set e to b right
-		subL.right = subLR.left;
-		if(subL.right!=null){
-			subL.right.parent = subL;
-			subL.right._direction = 1;
-		}
-		//set f to a left
-		this.left = subLR.right;
-		if(this.left!=null){
-			this.left.parent = this;
-			this.left._direction = -1;
-		}
-		//set b to c left
-		subLR.left = subL;
-		subL.parent = subLR;
-		subL._direction = -1;
-		//set a to c right
-		subLR.right = this;
-		this.parent = subLR;
-		this._direction = 1;
+			const l = this.left!;
+		//set l to root
+		setAsSide(l,this.parent,this._side);
+		//set lr to c left
+		setAsLeft(l.right,this);
+		//set c to l right
+		setAsRight(this,l);
 		//reset statistic
 		this._update();
-		subL._update();
-		subLR._update();
+		l._update();
+		//return new root
+		return l;
 	}
-	_rotateRightLeft(){
+	_rotateLeftRight():KTreeNode<K,V>{
         /*
-                |                               |
-                a(1)                            c
-               / \                             / \
-              /   \                           /   \
-            [d]   b(-1)          ==>         a     b
-                 / \                        / \   / \
-                c  [g]                    [d] e  f  [g]
-               / \
-              e  f
+                 |                                |
+                 c(-2)                            lr
+                / \                             /    \
+               /   \        ==>                /      \
+            (1)l    [r]                       l        c
+            /   \                            / \      /  \
+          [ll]   lr                      [ll] [lrl] [lrr] [r]
+               /   \
+            [lrl] [lrr]
         */
-		const subR = this.right!;
-		const subRL = subR.left!;
-		//set c to root
-		subRL.parent = this.parent;
-		subRL._direction = this._direction;
-		if(subRL.parent!==null){
-			if(subRL._direction===-1){
-				subRL.parent.left = subRL;
-			}
-			else{
-				subRL.parent.right = subRL;
-			}
-		}
-		//set f to b left
-		subR.left = subRL.right;
-		if(subR.left!=null){
-			subR.left.parent = subR;
-			subR.left._direction = -1;
-		}
-		//set e to a right
-		this.right = subRL.left;
-		if(this.right!=null){
-			this.right.parent = this;
-			this.right._direction = 1;
-		}
-		//set b to c right
-		subRL.right = subR;
-		subR.parent = subRL;
-		subR._direction = 1;
-		//set a to c left
-		subRL.left = this;
-		this.parent = subRL;
-		this._direction = -1;
+		const l = this.left!;
+		const lr = l.right!;
+		//set lr to root
+		setAsSide(lr,this.parent,this._side);
+		//set lrl to l right
+		setAsRight(lr.left,l);
+		//set lrr to c left
+		setAsLeft(lr.right,this);
+		//set l to lr left
+		setAsLeft(l,lr);
+		//set c to lr right
+		setAsRight(this,lr);
 		//reset statistic
 		this._update();
-		subR._update();
-		subRL._update();
+		l._update();
+		lr._update();
+		//return new root
+		return lr;
 	}
-	_factorRotateOnce(){
+	_rotateRightLeft():KTreeNode<K,V>{
+        /*
+                |                                  |
+                c(1)                               rl
+               /  \                             /      \
+              /    \                           /        \
+            [l]    r(-1)          ==>         c          r
+                   / \                       / \        / \
+                 rl  [rr]                  [l] [rll] [rlr] [rr]
+               /   \
+             [rll] [rlr]
+        */
+		const r = this.right!;
+		const rl = r.left!;
+		//set rl to root
+		setAsSide(rl,this.parent,this._side);
+		//set rlr to r left
+		setAsLeft(rl.right,r);
+		//set rll to c right
+		setAsRight(rl.left,this);
+		//set r to rl right
+		setAsRight(r,rl);
+		//set c to rl left
+		setAsLeft(this,rl);
+		//reset statistic
+		this._update();
+		r._update();
+		rl._update();
+		//return new root
+		return rl;
+	}
+	_factorRotateOnce():KTreeNode<K,V>{
 		if(this._factor==2){
 			//rotate left
-			if(this.right!._factor==1){
-				//rotate left only
-				this._rotateLeft();
+			if(this.right!._factor==-1){
+				//rotate right left
+				return this._rotateRightLeft();
 			}
 			else{
-				//rotate right left
-				this._rotateRightLeft();
+				//rotate left only
+				return this._rotateLeft();
 			}
 		}
 		else if(this._factor==-2){
 			//rotate right
-			if(this.left!._factor==-1){
-				//rotate right only
-				this._rotateRight();
+			if(this.left!._factor==1){
+				//rotate left right
+				return this._rotateLeftRight();
 			}
 			else{
-				//rotate left right
-				this._rotateLeftRight();
+				//rotate right only
+				return this._rotateRight();
 			}
 		}
+		else{
+			//no rotate
+			return this;
+		}
 	}
-	_rebalanceForInsert(){
+	_rebalanceForInsert():KTreeNode<K,V>{
+		let balanced = false;
+		let last:KTreeNode<K,V> = this.parent!;
 		let curr:KTreeNode<K,V>|null = this.parent;
 		while(curr!=null){
-			curr._update();
-			if(curr._factor===0){
-				//from -1 or 1, height not changed
-				break;
-			}
-			else {
-				curr._factorRotateOnce();
+			//balance
+			if(!balanced){
+				curr._update();
+				if(curr._factor===0){
+					//from -1 or 1, height not changed
+					balanced = true;
+				}
+				else {
+					curr = curr._factorRotateOnce();
+				}
 			}
 			//recursion
+			last = curr;
 			curr = curr.parent;
 		}
+		//return new root
+		return last;
 	}
 	_eraseAndRebalance(){
-		const parent = this.parent!;
-		let neo:KTreeNode<K,V>|null = null;
-		let init:KTreeNode<K,V> = parent;
+		let init:KTreeNode<K,V>;
 		if(this.left!==null&&this.right!==null){
 			//both sides
 			if(this.left.right===null){
-				//left can link right, shift up left sub tree
-				this.left.right = this.right;
-				neo = this.left;
 				init = this.left;
+				//left can link right, shift up left sub tree
+				setAsSide(this.left,this.parent,this._side);
+				setAsRight(this.right,this.left);
 			}
 			else if(this.right.left===null){
-				//right can link left, shift up right sub tree
-				this.right.left = this.left;
-				neo = this.right;
 				init = this.right;
+				//right can link left, shift up right sub tree
+				setAsSide(this.right,this.parent,this._side);
+				setAsLeft(this.left,this.right);
 			}
 			else{
 				//find nearest
@@ -263,63 +256,75 @@ export class KTreeNode<K,V> {
 					rdepth++;
 				}
 				if(this._factor===-1||this._factor===0&&ldepth<rdepth){
-					//set left to new root
-					neo = left;
 					init = left.parent!;
 					//update left's parent, shift up left's left subtree
-					init.right = left.left;
-					if(init.right){
-						init.right.parent = init;
-						init.right._direction = 1;
-					}
+					setAsRight(left.left,init);
+					//set left to new root
+					setAsSide(left,this.parent,this._side);
+					//set old child to new root
+					setAsLeft(this.left,left);
+					setAsRight(this.right,left);
+					//update new root
+					left._update();
 				}
 				else{
-					//set right to new root
-					neo = right;
 					init = right.parent!;
 					//update right's parent, shift up right's right subtree
-					init.left = right.right;
-					if(init.left){
-						init.left.parent = init;
-						init.left._direction = -1;
-					}
+					setAsLeft(right.right,init);
+					//set right to new root
+					setAsSide(right,this.parent,this._side);
+					//set old right to new root right
+					setAsLeft(this.left,right);
+					setAsRight(this.right,right);
+					//update new root
+					right._update();
 				}
 			}
 		}
 		else if(this.left!==null){
-			//only left, set left to new root
-			neo = this.left;
+			//only left
+			init = this.parent!;
+			//set left to new root
+			setAsSide(this.left,this.parent,this._side);
 		}
 		else if(this.right!==null){
-			//only right, set right to new root
-			neo = this.right;
-		}
-		//else no child, no root
-		//reset neo-parent link
-		if(neo!=null){
-			neo.parent = parent;
-			neo._direction = this._direction;
-		}
-		if(this._direction==-1){
-			parent.left = neo;
+			//only right
+			init = this.parent!;
+			//set right to new root
+			setAsSide(this.right,this.parent,this._side);
 		}
 		else{
-			parent.right = neo;
+			//no child
+			init = this.parent!;
+			//no new root
+			if(this._side===-1){
+				init.left = null;
+			}
+			else{
+				init.right = null;
+			}
 		}
 		//rebalance
+		let balanced = false;
+		let last:KTreeNode<K,V> = init;
 		let curr:KTreeNode<K,V>|null = init;
 		while(curr!=null){
-			curr._update();
-			if(curr._factor===-1||curr._factor===1){
-				//from 0, height not changed
-				break;
-			}
-			else {
-				curr._factorRotateOnce();
+			if(!balanced){
+				curr._update();
+				if(curr._factor===-1||curr._factor===1){
+					//from 0, height not changed
+					balanced = true;
+				}
+				else {
+					curr = curr._factorRotateOnce();
+				}
 			}
 			//recursion
+			last = curr;
 			curr = curr.parent;
 		}
+		//return neo root
+		return last;
 	}
 }
 
@@ -354,20 +359,20 @@ export class KTree<K,V> {
 		}
 		return curr;
 	}
-	_remove(node:KTreeNode<K,V>){
+	remove(node:KTreeNode<K,V>){
 		if(node.parent==null){
 			//root;
 			this.root = null;
 		}
 		else{
 			//not root
-			node._eraseAndRebalance();
+			this.root = node._eraseAndRebalance();
 		}
 		this.size--;
 	}
-	put(k:K,v:V):KTreeNode<K,V>{
+	set(k:K,v?:V):KTreeNode<K,V>{
 		if(this.root===null){
-			this.root = new KTreeNode(this,k,v);
+			this.root = new KTreeNode(k,v);
 			this.size = 1;
 			return this.root;
 		}
@@ -380,18 +385,18 @@ export class KTree<K,V> {
 				return nearest;
 			}
 			else{
-				const rst = new KTreeNode(this,k,v);
+				const rst = new KTreeNode(k,v);
 				if(diff<0){
 					nearest.left = rst;
 					rst.parent = nearest;
-					rst._direction = -1;
+					rst._side = -1;
 				}
 				else{
 					nearest.right = rst;
 					rst.parent = nearest;
-					rst._direction = 1;
+					rst._side = 1;
 				}
-				rst._rebalanceForInsert();
+				this.root = rst._rebalanceForInsert();
 				this.size++;
 				return rst;
 			}
@@ -405,7 +410,7 @@ export class KTree<K,V> {
 			const node = this._findNearest(k);
 			if(this.compare(k,node.key)===0){
 				if(remove){
-					this._remove(node);
+					this.remove(node);
 				}
 				return node;
 			}
@@ -424,7 +429,7 @@ export class KTree<K,V> {
 				curr = curr.left;
 			}
 			if(remove){
-				this._remove(curr);
+				this.remove(curr);
 			}
 			return curr;
 		}
@@ -439,9 +444,61 @@ export class KTree<K,V> {
 				curr = curr.right;
 			}
 			if(remove){
-				this._remove(curr);
+				this.remove(curr);
 			}
 			return curr;
 		}
+	}
+	forEach(op:($:KTreeNode<K,V>)=>boolean|void,reverse?:boolean):boolean{
+		let rr = false;
+		if(this.root!=null){
+			const nodeStack:KTreeNode<K,V>[] = [];
+			const stateStack:number[] = [];
+			nodeStack.push(this.root);
+			stateStack.push(0);
+			while(nodeStack.length>0){
+				const node = nodeStack.pop()!;
+				const state = stateStack.pop()!;
+				let r:boolean|void = undefined;
+				switch(state){
+					case 0:
+						nodeStack.push(node);
+						stateStack.push(1);
+						if(reverse){
+							if(node.right!==null){
+								nodeStack.push(node.right);
+								stateStack.push(0);
+							}
+						}
+						else{
+							if(node.left!==null){
+								nodeStack.push(node.left);
+								stateStack.push(0);
+							}
+						}
+						break;
+					case 1:
+						r = op(node);
+						if(reverse){
+							if(node.left!==null){
+								nodeStack.push(node.left);
+								stateStack.push(0);
+							}
+						}
+						else{
+							if(node.right!==null){
+								nodeStack.push(node.right);
+								stateStack.push(0);
+							}
+						}
+						break;
+				}
+				if(r){
+					rr = true;
+					break;
+				}
+			}
+		}
+		return rr;
 	}
 }
