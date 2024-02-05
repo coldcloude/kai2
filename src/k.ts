@@ -23,18 +23,6 @@ export class KListNode<T> {
 		this.next = next;
 		this.list = list;
 	}
-
-	insertBefore(v:T):KListNode<T>{
-		return this.list.insertBefore(v,this);
-	}
-
-	insertAfter(v:T):KListNode<T>{
-		return this.list.insertAfter(v,this);
-	}
-
-	remove(){
-		this.list.remove(this);
-	}
 }
 
 export class KList<T> {
@@ -152,7 +140,9 @@ export class KList<T> {
 	}
 }
 
-export type KEventNode<T,C> = KListNode<(v:T,c?:C)=>void>;
+export type KEventHandler = {
+	cancel:()=>void
+};
 
 export class KEvent<T,C> {
 
@@ -166,26 +156,31 @@ export class KEvent<T,C> {
 		this.context = context;
 	}
 
-	register(h:(v:T,c?:C)=>void):KEventNode<T,C>{
-		const r = this.handlers.push(h);
+	register(h:(v:T,c?:C)=>void):KEventHandler{
+		const h$ = this.handlers.push(h);
 		if(this.capacity&&this.handlers.size>this.capacity){
 			this.handlers.shift();
 		}
-		return r;
+		return {
+			cancel: ()=>{
+				this.handlers.remove(h$);
+			}
+		};
 	}
 
 	trigger(value:T){
-		this.handlers.foreach((h$:KEventNode<T,C>)=>{
+		this.handlers.foreach((h$:KListNode<(v:T,c?:C)=>void>)=>{
 			h$.value(value,this.context);
 		});
 	}
 
-	once(h:(v:T,c?:C)=>void){
-		let h$:KEventNode<T,C>|undefined = undefined;
+	once(h:(v:T,c?:C)=>void):KEventHandler{
+		let h$:KEventHandler|undefined = undefined;
 		h$ = this.register((v,c)=>{
-			h$?.remove();
+			h$!.cancel();
 			h(v,c);
 		});
+		return h$;
 	}
 }
 
