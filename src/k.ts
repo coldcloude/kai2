@@ -10,18 +10,19 @@ export function memcpy<T>(ad:T[],od:number,as:T[],os:number,len:number){
 	}
 }
 
+export type KPair<K,V> = {
+	key:K,
+	value?:V
+};
+
 export class KListNode<T> {
 
 	value:T;
-	prev:KListNode<T>|null;
-	next:KListNode<T>|null;
-	list:KList<T>;
+	prev:KListNode<T>|null = null;
+	next:KListNode<T>|null = null;
 
-	constructor(value:T,prev:KListNode<T>|null,next:KListNode<T>|null,list:KList<T>){
+	constructor(value:T){
 		this.value = value;
-		this.prev = prev;
-		this.next = next;
-		this.list = list;
 	}
 }
 
@@ -37,13 +38,9 @@ export class KList<T> {
 		this.size = 0;
 	}
 
-	_assert(node:KListNode<T>|null){
-		if(node&&node.list!==this){
-			throw new Error("list not match");
-		}
-	}
-
 	_adjust(node:KListNode<T>,prev:KListNode<T>|null,next:KListNode<T>|null){
+		node.prev = prev;
+		node.next = next;
 		if(prev){
 			prev.next = node;
 		}
@@ -58,31 +55,31 @@ export class KList<T> {
 		}
 	}
 
-	insertBefore(value:T,next:KListNode<T>|null):KListNode<T>{
-		//test list
-		this._assert(next);
-		//build node
+	insertNodeBefore(node:KListNode<T>,next:KListNode<T>|null){
 		const prev = next?next.prev:this.tail;
-		const r = new KListNode(value,prev,next,this);
-		this._adjust(r,prev,next);
+		this._adjust(node,prev,next);
 		this.size++;
+	}
+
+	insertNodeAfter(node:KListNode<T>,prev:KListNode<T>|null){
+		const next = prev?prev.next:this.head;
+		this._adjust(node,prev,next);
+		this.size++;
+	}
+
+	insertBefore(value:T,next:KListNode<T>|null):KListNode<T>{
+		const r = new KListNode(value);
+		this.insertNodeBefore(r,next);
 		return r;
 	}
 
 	insertAfter(value:T,prev:KListNode<T>|null):KListNode<T>{
-		//test list
-		this._assert(prev);
-		//build node
-		const next = prev?prev.next:this.head;
-		const r = new KListNode(value,prev,next,this);
-		this._adjust(r,prev,next);
-		this.size++;
+		const r = new KListNode(value);
+		this.insertNodeAfter(r,prev);
 		return r;
 	}
 
 	remove(node:KListNode<T>|null):T|undefined{
-		//test list
-		this._assert(node);
 		//test empty
 		if(!node){
 			return undefined;
@@ -104,21 +101,45 @@ export class KList<T> {
 		return node.value;
 	}
 
-	foreach(op:(v:KListNode<T>)=>void,reverse?:boolean){
+	foreach(op:(v:T)=>boolean|void,reverse?:boolean):boolean{
 		if(reverse){
 			let curr = this.tail;
 			while(curr){
 				const prev = curr.prev;
-				op(curr);
-				curr = prev;
+				if(op(curr.value)){
+					return true;
+				}
+				else{
+					curr = prev;
+				}
 			}
 		}
 		else{
 			let curr = this.head;
 			while(curr){
 				const next = curr.next;
-				op(curr);
-				curr = next;
+				if(op(curr.value)){
+					return true;
+				}
+				else{
+					curr = next;
+				}
+			}
+		}
+		return false;
+	}
+
+	removeIf(pred:(v:T)=>boolean){
+		let curr:KListNode<T>|null = this.head;
+		let last:KListNode<T>|null = null;
+		while(curr!==null){
+			if(pred(curr.value)){
+				this.remove(curr);
+				curr = last===null?this.head:last.next;
+			}
+			else{
+				last = curr;
+				curr = curr.next;
 			}
 		}
 	}
@@ -169,8 +190,8 @@ export class KEvent<T,C> {
 	}
 
 	trigger(value:T){
-		this.handlers.foreach((h$:KListNode<(v:T,c?:C)=>void>)=>{
-			h$.value(value,this.context);
+		this.handlers.foreach((h:(v:T,c?:C)=>void)=>{
+			h(value,this.context);
 		});
 	}
 

@@ -1,60 +1,86 @@
 import Random from "../k-math-random.js";
-import { KTree, KTreeNode } from "../k-avltree.js";
+import { KAVLTree, bigintcmp } from "../k-tree.js";
 
-function validate<K,V>(tree:KTree<K,V>):string|void{
-    let last:KTreeNode<K,V>|undefined = undefined;
-    let error = "";
-    const r = tree.forEach((node)=>{
+function validate<K,V>(tree:KAVLTree<K,V>):string|void{
+    let error:string|void = undefined;
+    let node = tree.getLeast();
+    while(node!==undefined){
         if(node._factor>1||node._factor<-1){
             error = "unbalance, factor="+node._factor;
-            return true;
+            break;
         }
         let leftHeight = 0;
         let rightHeight = 0;
         if(node.left!==null){
             if(node.left.parent!==node){
                 error = "this is "+node.key+", but left's parent is "+node.left.parent?.key;
-                return true;
+                break;
             }
             if(node.left._side!==-1){
                 error = "left's side is "+node.left._side;
-                return true;
+                break;
             }
             leftHeight = node.left._height;
         }
         if(node.right!==null){
             if(node.right.parent!==node){
                 error = "this is "+node.key+", but right's parent is "+node.right.parent?.key;
-                return true;
+                break;
             }
             if(node.right._side!==1){
                 error = "right's side is "+node.right._side;
-                return true;
+                break;
             }
             rightHeight = node.right._height;
         }
         if(Math.max(leftHeight,rightHeight)+1!==node._height){
             error = "height wrong, left="+leftHeight+", right="+rightHeight+", height="+node._height;
-            return true;
+            break;
         }
         if(rightHeight-leftHeight!==node._factor){
             error = "factor wrong, left="+leftHeight+", right="+rightHeight+", factor="+node._factor;
-            return true;
+            break;
         }
+        node = node.next();
+    }
+    if(error){
+        return error;
+    }
+    let last:K|undefined = undefined;
+    let r = tree.foreach((k:K)=>{
         if(last===undefined){
-            last = node;
+            last = k;
         }
         else{
-            const sign = tree.compare(last.key,node.key);
+            const sign = tree.compare(last,k);
             if(sign<0){
-                last = node;
+                last = k;
             }
             else{
-                error = "wrong order, last="+last.key+", this="+node.key;
+                error = "wrong order, last="+last+", this="+k;
                 return true;
             }
         }
     });
+    if(r){
+        return error;
+    }
+    last = undefined;
+    r = tree.foreach((k:K)=>{
+        if(last===undefined){
+            last = k;
+        }
+        else{
+            const sign = tree.compare(last,k);
+            if(sign>0){
+                last = k;
+            }
+            else{
+                error = "wrong reverse order, last="+last+", this="+k;
+                return true;
+            }
+        }
+    },true);
     if(r){
         return error;
     }
@@ -63,10 +89,7 @@ function validate<K,V>(tree:KTree<K,V>):string|void{
 export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log("seed = "+rnd.initSeed);
-    const tree = new KTree<bigint,undefined>((a,b)=>{
-        const sign = a-b;
-        return sign===0n?0:sign<0?-1:1;
-    });
+    const tree = new KAVLTree<bigint,undefined>(bigintcmp);
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;

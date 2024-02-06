@@ -1,4 +1,4 @@
-function setAsSide<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null,side:number){
+function setAsSide<K,V,N extends KTreeNode<K,V,N>>(node:N|null,parent:N|null,side:number){
 	if(parent!==null){
 		switch(side){
 			case -1:
@@ -14,7 +14,7 @@ function setAsSide<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null,side
 		node._side = side;
 	}
 }
-function setAsLeft<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
+function setAsLeft<K,V,N extends KTreeNode<K,V,N>>(node:N|null,parent:N|null){
 	if(parent!==null){
 		parent.left = node;
 	}
@@ -23,7 +23,7 @@ function setAsLeft<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
 		node._side = -1;
 	}
 }
-function setAsRight<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
+function setAsRight<K,V,N extends KTreeNode<K,V,N>>(node:N|null,parent:N|null){
 	if(parent!==null){
 		parent.right = node;
 	}
@@ -33,21 +33,77 @@ function setAsRight<K,V>(node:KTreeNode<K,V>|null,parent:KTreeNode<K,V>|null){
 	}
 }
 
-export class KTreeNode<K,V> {
+export class KTreeNode<K,V,N extends KTreeNode<K,V,N>> {
 
 	key:K;
 	value:V|undefined;
 
-	parent:KTreeNode<K,V>|null = null;
-	left:KTreeNode<K,V>|null = null;
-	right:KTreeNode<K,V>|null = null;
-	_height:number = 1;
-	_factor:number = 0;
+	parent:N|null = null;
+	left:N|null = null;
+	right:N|null = null;
 	_side:number = 0;
 
 	constructor(key:K,value?:V){
 		this.key = key;
 		this.value = value;
+	}
+	prev():N|undefined{
+		if(this.left!==null){
+			//now at center, find left sub tree's right most
+			let curr = this.left;
+			while(curr.right!==null){
+				curr = curr.right;
+			}
+			return curr;
+		}
+		else{
+			//end of sub tree, find nearest right sub tree root
+			if(this._side===1){
+				//this is right sub tree root
+				return this.parent!;
+			}
+			else{
+				let curr:N|null = this.parent;
+				while(curr!==null&&curr._side!==1){
+					curr = curr.parent;
+				}
+				return curr===null?undefined:curr.parent!;
+			}
+		}
+	}
+	next():N|undefined{
+		if(this.right!==null){
+			//now at center, find right sub tree's left most
+			let curr = this.right;
+			while(curr.left!==null){
+				curr = curr.left;
+			}
+			return curr;
+		}
+		else{
+			//end of sub tree, find nearest left sub tree root
+			if(this._side===-1){
+				//this is left sub tree root
+				return this.parent!;
+			}
+			else{
+				let curr:N|null = this.parent;
+				while(curr!==null&&curr._side!==-1){
+					curr = curr.parent;
+				}
+				return curr===null?undefined:curr.parent!;
+			}
+		}
+	}
+}
+
+export class KAVLTreeNode<K,V> extends KTreeNode<K,V,KAVLTreeNode<K,V>>{
+
+	_height:number = 1;
+	_factor:number = 0;
+
+	constructor(key:K,value?:V){
+		super(key,value);
 	}
 
 	_update(){
@@ -56,7 +112,7 @@ export class KTreeNode<K,V> {
 		this._height = Math.max(leftHeight,rightHeight)+1;
 		this._factor = rightHeight-leftHeight;
 	}
-	_rotateLeft():KTreeNode<K,V>{
+	_rotateLeft():KAVLTreeNode<K,V>{
         /*
                 c(2)                       r(0)
                / \          ==>           /  \
@@ -84,7 +140,7 @@ export class KTreeNode<K,V> {
 		//return new root
 		return r;
 	}
-	_rotateRight():KTreeNode<K,V>{
+	_rotateRight():KAVLTreeNode<K,V>{
         /*
                  c(-2)                  l(0)
                /    \        ==>       /  \
@@ -112,7 +168,7 @@ export class KTreeNode<K,V> {
 		//return new root
 		return l;
 	}
-	_rotateLeftRight():KTreeNode<K,V>{
+	_rotateLeftRight():KAVLTreeNode<K,V>{
         /*
                  |                                |
                  c(-2)                            lr
@@ -143,7 +199,7 @@ export class KTreeNode<K,V> {
 		//return new root
 		return lr;
 	}
-	_rotateRightLeft():KTreeNode<K,V>{
+	_rotateRightLeft():KAVLTreeNode<K,V>{
         /*
                 |                                  |
                 c(1)                               rl
@@ -174,7 +230,7 @@ export class KTreeNode<K,V> {
 		//return new root
 		return rl;
 	}
-	_factorRotateOnce():KTreeNode<K,V>{
+	_factorRotateOnce():KAVLTreeNode<K,V>{
 		if(this._factor==2){
 			//rotate left
 			if(this.right!._factor==-1){
@@ -202,10 +258,10 @@ export class KTreeNode<K,V> {
 			return this;
 		}
 	}
-	_rebalanceForInsert():KTreeNode<K,V>{
+	_rebalanceForInsert():KAVLTreeNode<K,V>{
 		let balanced = false;
-		let last:KTreeNode<K,V> = this.parent!;
-		let curr:KTreeNode<K,V>|null = this.parent;
+		let last:KAVLTreeNode<K,V> = this.parent!;
+		let curr:KAVLTreeNode<K,V>|null = this.parent;
 		while(curr!=null){
 			//balance
 			if(!balanced){
@@ -226,7 +282,7 @@ export class KTreeNode<K,V> {
 		return last;
 	}
 	_eraseAndRebalance(){
-		let init:KTreeNode<K,V>;
+		let init:KAVLTreeNode<K,V>;
 		if(this.left!==null&&this.right!==null){
 			//both sides
 			if(this.left.right===null){
@@ -306,8 +362,8 @@ export class KTreeNode<K,V> {
 		}
 		//rebalance
 		let balanced = false;
-		let last:KTreeNode<K,V> = init;
-		let curr:KTreeNode<K,V>|null = init;
+		let last:KAVLTreeNode<K,V> = init;
+		let curr:KAVLTreeNode<K,V>|null = init;
 		while(curr!=null){
 			if(!balanced){
 				curr._update();
@@ -328,14 +384,16 @@ export class KTreeNode<K,V> {
 	}
 }
 
-export class KTree<K,V> {
+export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> {
 	compare:(a:K,b:K)=>number;
-	root:KTreeNode<K,V>|null = null;
+	root:N|null = null;
 	size = 0;
 	constructor(compare:(a:K,b:K)=>number){
 		this.compare = compare;
 	}
-	_findNearest(k:K):KTreeNode<K,V>{
+	abstract set(k:K,v?:V):N;
+	abstract remove(node:N):void;
+	_findNearest(k:K):N{
 		let curr = this.root!;
 		let diff = this.compare(k,curr.key);
 		while(diff!==0){
@@ -359,50 +417,7 @@ export class KTree<K,V> {
 		}
 		return curr;
 	}
-	remove(node:KTreeNode<K,V>){
-		if(node.parent==null){
-			//root;
-			this.root = null;
-		}
-		else{
-			//not root
-			this.root = node._eraseAndRebalance();
-		}
-		this.size--;
-	}
-	set(k:K,v?:V):KTreeNode<K,V>{
-		if(this.root===null){
-			this.root = new KTreeNode(k,v);
-			this.size = 1;
-			return this.root;
-		}
-		else{
-			const nearest = this._findNearest(k);
-			const diff = this.compare(k,nearest.key);
-			if(diff===0){
-				nearest.key = k;
-				nearest.value = v;
-				return nearest;
-			}
-			else{
-				const rst = new KTreeNode(k,v);
-				if(diff<0){
-					nearest.left = rst;
-					rst.parent = nearest;
-					rst._side = -1;
-				}
-				else{
-					nearest.right = rst;
-					rst.parent = nearest;
-					rst._side = 1;
-				}
-				this.root = rst._rebalanceForInsert();
-				this.size++;
-				return rst;
-			}
-		}
-	}
-	get(k:K,remove?:boolean):KTreeNode<K,V>|undefined{
+	get(k:K,remove?:boolean):N|undefined{
 		if(this.root===null){
 			return undefined;
 		}
@@ -419,14 +434,16 @@ export class KTree<K,V> {
 			}
 		}
 	}
-	getLeast(remove?:boolean):KTreeNode<K,V>|undefined{
+	getLeast(remove?:boolean):N|undefined{
 		if(this.root===null){
 			return undefined;
 		}
 		else{
 			let curr = this.root;
-			while(curr.left!==null){
-				curr = curr.left;
+			let prev:N|undefined = curr.prev();
+			if(prev!==undefined){
+				curr = prev;
+				prev = curr.prev();
 			}
 			if(remove){
 				this.remove(curr);
@@ -434,14 +451,16 @@ export class KTree<K,V> {
 			return curr;
 		}
 	}
-	getGreatest(remove?:boolean):KTreeNode<K,V>|undefined{
+	getGreatest(remove?:boolean):N|undefined{
 		if(this.root===null){
 			return undefined;
 		}
 		else{
 			let curr = this.root;
-			while(curr.right!==null){
-				curr = curr.right;
+			let next:N|undefined = curr.next();
+			if(next!==undefined){
+				curr = next;
+				next = curr.next();
 			}
 			if(remove){
 				this.remove(curr);
@@ -449,56 +468,95 @@ export class KTree<K,V> {
 			return curr;
 		}
 	}
-	forEach(op:($:KTreeNode<K,V>)=>boolean|void,reverse?:boolean):boolean{
-		let rr = false;
-		if(this.root!=null){
-			const nodeStack:KTreeNode<K,V>[] = [];
-			const stateStack:number[] = [];
-			nodeStack.push(this.root);
-			stateStack.push(0);
-			while(nodeStack.length>0){
-				const node = nodeStack.pop()!;
-				const state = stateStack.pop()!;
-				let r:boolean|void = undefined;
-				switch(state){
-					case 0:
-						nodeStack.push(node);
-						stateStack.push(1);
-						if(reverse){
-							if(node.right!==null){
-								nodeStack.push(node.right);
-								stateStack.push(0);
-							}
-						}
-						else{
-							if(node.left!==null){
-								nodeStack.push(node.left);
-								stateStack.push(0);
-							}
-						}
-						break;
-					case 1:
-						r = op(node);
-						if(reverse){
-							if(node.left!==null){
-								nodeStack.push(node.left);
-								stateStack.push(0);
-							}
-						}
-						else{
-							if(node.right!==null){
-								nodeStack.push(node.right);
-								stateStack.push(0);
-							}
-						}
-						break;
-				}
-				if(r){
-					rr = true;
-					break;
-				}
+	foreach(op:(k:K,v?:V)=>boolean|void,reverse?:boolean):boolean{
+		let curr:N|undefined = reverse?this.getGreatest():this.getLeast();
+		while(curr!==undefined){
+			if(op(curr.key,curr.value)){
+				return true;
+			}
+			else{
+				curr = reverse?curr.prev():curr.next();
 			}
 		}
-		return rr;
+		return false;
+	}
+	removeIf(pred:(k:K,v?:V)=>boolean){
+		let curr:N|undefined = this.getLeast();
+		let last:N|undefined = undefined;
+		while(curr!==undefined){
+			if(pred(curr.key,curr.value)){
+				this.remove(curr);
+				curr = last===undefined?this.getLeast():last.next();
+			}
+			else{
+				//no op, step on
+				last = curr;
+				curr = curr.next();
+			}
+		}
 	}
 }
+
+export class KAVLTree<K,V> extends KTree<K,V,KAVLTreeNode<K,V>> {
+	constructor(compare:(a:K,b:K)=>number){
+		super(compare);
+		this.compare = compare;
+	}
+	remove(node:KAVLTreeNode<K,V>){
+		if(node.parent==null){
+			//root;
+			this.root = null;
+		}
+		else{
+			//not root
+			this.root = node._eraseAndRebalance();
+			this.root._side = 0;
+		}
+		this.size--;
+	}
+	set(k:K,v?:V):KAVLTreeNode<K,V>{
+		if(this.root===null){
+			this.root = new KAVLTreeNode(k,v);
+			this.size = 1;
+			return this.root;
+		}
+		else{
+			const nearest = this._findNearest(k);
+			const diff = this.compare(k,nearest.key);
+			if(diff===0){
+				nearest.key = k;
+				nearest.value = v;
+				return nearest;
+			}
+			else{
+				const rst = new KAVLTreeNode(k,v);
+				if(diff<0){
+					nearest.left = rst;
+					rst.parent = nearest;
+					rst._side = -1;
+				}
+				else{
+					nearest.right = rst;
+					rst.parent = nearest;
+					rst._side = 1;
+				}
+				this.root = rst._rebalanceForInsert();
+				this.size++;
+				return rst;
+			}
+		}
+	}
+}
+
+export const numcmp = (a:number,b:number)=>{
+	return a-b;
+};
+
+export const strcmp = (a:string,b:string)=>{
+	return a===b?0:a<b?-1:1;
+};
+
+export const bigintcmp = (a:bigint,b:bigint)=>{
+	const sign = a-b;
+	return sign===0n?0:sign<0?-1:1;
+};
