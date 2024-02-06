@@ -1,8 +1,8 @@
 import Random from "../k-math-random.js";
-import { KTree, KTreeNode, bigintcmp } from "../k-tree.js";
+import { KAVLTree, KAVLTreeNode, bigintcmp } from "../k-tree.js";
 
-function validate<K,V>(tree:KTree<K,V>):string|void{
-    let last:KTreeNode<K,V>|undefined = undefined;
+function validate<K,V>(tree:KAVLTree<K,V>):string|void{
+    let last:KAVLTreeNode<K,V>|undefined = undefined;
     let error = "";
     const r = tree.foreach((node)=>{
         if(node._factor>1||node._factor<-1){
@@ -63,7 +63,7 @@ function validate<K,V>(tree:KTree<K,V>):string|void{
 export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log("seed = "+rnd.initSeed);
-    const tree = new KTree<bigint,undefined>(bigintcmp);
+    const tree = new KAVLTree<bigint,undefined>(bigintcmp);
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;
