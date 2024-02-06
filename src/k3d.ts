@@ -1,6 +1,6 @@
-export type Matrix3D = number[]
+export type Matrix3D = number[];
 
-export type Vector3D = number[]
+export type Vector3D = number[];
 
 export function columnsMatrix(vs:Vector3D[]):Matrix3D{
 	return [
@@ -209,7 +209,7 @@ export type Geometry = {
 	vertex:number[],
 	index:number[],
 	uv:number[],
-}
+};
 
 //	      z
 //	      ^

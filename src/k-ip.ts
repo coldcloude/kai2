@@ -1,7 +1,8 @@
 import {uint8,uint32} from './k-math.js';
 
 export function num2ip(num:number):string{
-	return uint8(num>>24)+"."+uint8(num>>16)+"."+uint8(num>>8)+"."+uint8(num);
+	const num0 = num|0;
+	return uint8(num0>>24)+"."+uint8(num0>>16)+"."+uint8(num0>>8)+"."+uint8(num0);
 }
 
 export function ip2num(ip:string):number{
@@ -17,7 +18,7 @@ export function cidr2num(cidr:string):number[]{
 }
 
 export function cidrLen2netMask(len:number):number{
-	return ~(0xFFFFFFFF>>>len);
+	return ~(0xFFFFFFFF>>>(len|0));
 }
 
 export function parseIpNet(addr:number,len:number):number{

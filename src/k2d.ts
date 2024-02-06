@@ -1,6 +1,6 @@
-export type Matrix2D = number[]
+export type Matrix2D = number[];
 
-export type Vector2D = number[]
+export type Vector2D = number[];
 
 export function inverse(m:Matrix2D):Matrix2D{
 	const det1 = 1/(m[0]*m[3]-m[1]*m[2]);

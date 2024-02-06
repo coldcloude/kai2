@@ -13,9 +13,9 @@ export function hex2byte(hex:string):number{
 }
 
 function UIntN(N:number):(n:number)=>number{
-	const mask = 0xFFFFFFFF>>>32-N;
+	const mask = 0xFFFFFFFF>>>32-N|0;
 	return function(n){
-		return (n&mask)>>>0;
+		return (n|0)&mask;
 	};
 }
 
@@ -30,7 +30,7 @@ export {
 };
 
 export function uintN(n:number,N:number):number{
-	return (n&(0xFFFFFFFF>>>32-N))>>>0;
+	return (n|0)&(0xFFFFFFFF>>>32-(N|0));
 }
 
 export function max(...arr:number[]):number|undefined{
