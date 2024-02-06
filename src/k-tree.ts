@@ -449,7 +449,7 @@ export class KTree<K,V> {
 			return curr;
 		}
 	}
-	forEach(op:($:KTreeNode<K,V>)=>boolean|void,reverse?:boolean):boolean{
+	foreach(op:($:KTreeNode<K,V>)=>boolean|void,reverse?:boolean):boolean{
 		let rr = false;
 		if(this.root!=null){
 			const nodeStack:KTreeNode<K,V>[] = [];
@@ -502,3 +502,16 @@ export class KTree<K,V> {
 		return rr;
 	}
 }
+
+export const numcmp = (a:number,b:number)=>{
+	return a-b;
+};
+
+export const strcmp = (a:string,b:string)=>{
+	return a===b?0:a<b?-1:1;
+};
+
+export const bigintcmp = (a:bigint,b:bigint)=>{
+	const sign = a-b;
+	return sign===0n?0:sign<0?-1:1;
+};

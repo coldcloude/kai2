@@ -1,6 +1,7 @@
 export * from './k.js';
-export * from './k-avltree.js';
+export * from './k-tree.js';
 export * from './k-math.js';
+export * from './k-math-random.js';
 export * from './k-ip.js';
 export * from './k-color.js';
 

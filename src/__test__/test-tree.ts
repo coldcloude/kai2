@@ -1,10 +1,10 @@
 import Random from "../k-math-random.js";
-import { KTree, KTreeNode } from "../k-avltree.js";
+import { KTree, KTreeNode, bigintcmp } from "../k-tree.js";
 
 function validate<K,V>(tree:KTree<K,V>):string|void{
     let last:KTreeNode<K,V>|undefined = undefined;
     let error = "";
-    const r = tree.forEach((node)=>{
+    const r = tree.foreach((node)=>{
         if(node._factor>1||node._factor<-1){
             error = "unbalance, factor="+node._factor;
             return true;
@@ -63,10 +63,7 @@ function validate<K,V>(tree:KTree<K,V>):string|void{
 export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log("seed = "+rnd.initSeed);
-    const tree = new KTree<bigint,undefined>((a,b)=>{
-        const sign = a-b;
-        return sign===0n?0:sign<0?-1:1;
-    });
+    const tree = new KTree<bigint,undefined>(bigintcmp);
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;
