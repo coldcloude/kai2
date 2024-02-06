@@ -1,18 +1,19 @@
-import {min,KLoader} from "../index.js";
+import testLoader from "./test-loader.js";
 
-console.log(min(5,4,3,2,1));
+testLoader();
 
-console.log(min(...[5,4,3,2,1]));
+import testMath from "./test-math.js";
 
-const loader = new KLoader();
+testMath();
 
-loader.onDone(()=>console.log("done"));
+import testRandom from "./test-math-random.js";
 
-loader.load((cb)=>{
-    setTimeout(()=>{
-        console.log("triggered");
-        cb();
-    },3000);
-});
+testRandom();
 
-loader.complete();
+import testTree from "./test-tree.js";
+
+testTree();
+
+import testHashTable from "./test-hashtable.js";
+
+testHashTable();
