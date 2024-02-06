@@ -10,6 +10,11 @@ export function memcpy<T>(ad:T[],od:number,as:T[],os:number,len:number){
 	}
 }
 
+export type KPair<K,V> = {
+	key:K,
+	value?:V
+};
+
 export class KListNode<T> {
 
 	value:T;
@@ -96,23 +101,32 @@ export class KList<T> {
 		return node.value;
 	}
 
-	foreach(op:(v:KListNode<T>)=>void,reverse?:boolean){
+	foreach(op:(v:T)=>boolean|void,reverse?:boolean):boolean{
 		if(reverse){
 			let curr = this.tail;
 			while(curr){
 				const prev = curr.prev;
-				op(curr);
-				curr = prev;
+				if(op(curr.value)){
+					return true;
+				}
+				else{
+					curr = prev;
+				}
 			}
 		}
 		else{
 			let curr = this.head;
 			while(curr){
 				const next = curr.next;
-				op(curr);
-				curr = next;
+				if(op(curr.value)){
+					return true;
+				}
+				else{
+					curr = next;
+				}
 			}
 		}
+		return false;
 	}
 
 	removeIf(pred:(v:T)=>boolean){
@@ -176,8 +190,8 @@ export class KEvent<T,C> {
 	}
 
 	trigger(value:T){
-		this.handlers.foreach((h$:KListNode<(v:T,c?:C)=>void>)=>{
-			h$.value(value,this.context);
+		this.handlers.foreach((h:(v:T,c?:C)=>void)=>{
+			h(value,this.context);
 		});
 	}
 

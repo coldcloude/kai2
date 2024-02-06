@@ -468,10 +468,10 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> {
 			return curr;
 		}
 	}
-	foreach(op:($:N)=>boolean|void,reverse?:boolean):boolean{
+	foreach(op:(k:K,v?:V)=>boolean|void,reverse?:boolean):boolean{
 		let curr:N|undefined = reverse?this.getGreatest():this.getLeast();
 		while(curr!==undefined){
-			if(op(curr)){
+			if(op(curr.key,curr.value)){
 				return true;
 			}
 			else{
