@@ -41,9 +41,9 @@ function validate(table:KHashTable<bigint,bigint>):string|void{
     }
 }
 
-export default function test(seed?:bigint){
+export default function test(callback:()=>void,seed?:bigint){
     const rnd = new Random(seed);
-    console.log("seed = "+rnd.initSeed);
+    console.log(rnd.initSeed);
     const table = new KHashTable<bigint,bigint>(bigintcmp,biginthash);
     let insertCorrect = 0;
     let insertWrong = 0;
@@ -103,4 +103,5 @@ export default function test(seed?:bigint){
         }
     }
     console.log("insert correct: "+insertCorrect+", "+"insert wrong: "+insertWrong+", "+"delete correct: "+deleteCorrect+", "+"delete wrong: "+deleteWrong);
+    callback();
 }
