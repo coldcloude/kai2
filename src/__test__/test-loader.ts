@@ -1,24 +1,50 @@
-import { KLoader } from "../k.js";
+import { KDependencyRunner } from "../k.js";
 
-export default function test(){
+export default function test(callback:()=>void){
 
-    const loader = new KLoader();
+    const runner = new KDependencyRunner();
     
-    const start = new Date();
+    const start = Date.now();
 
-    loader.load((cb)=>{
-        setTimeout(()=>{
-            console.log("triggered");
-            cb();
-        },3000);
+    runner.add(0,(cb:()=>void)=>{
+        const time = (Date.now()-start)/1000;
+        console.log("batch 0 start @ "+time+"s");
+        setTimeout(cb,1000);
     });
 
-    loader.onDone(()=>{
-        const end = new Date();
-        console.log("time elapsed = "+(end.getTime()-start.getTime())/1000.0+"s");
+    runner.add(1,(cb:()=>void)=>{
+        const time = (Date.now()-start)/1000;
+        console.log("batch 1 task 0 start @ "+time+"s");
+        setTimeout(cb,500);
     });
-    
-    loader.complete();
 
-    console.log("loaded");
+    runner.add(1,(cb:()=>void)=>{
+        const time = (Date.now()-start)/1000;
+        console.log("batch 1 task 1 start @ "+time+"s");
+        setTimeout(cb,1500);
+    });
+
+    runner.add(2,(cb:()=>void)=>{
+        const time = (Date.now()-start)/1000;
+        console.log("batch 2 start @ "+time+"s");
+        setTimeout(cb,1000);
+    });
+
+    runner.add(3,(cb:()=>void)=>{
+        const time = (Date.now()-start)/1000;
+        console.log("batch 3 start @ "+time+"s");
+        setTimeout(cb,1000);
+    });
+
+    runner.depend(1,[0]);
+    runner.depend(2,[0]);
+    runner.depend(3,[1,2]);
+
+    runner.onDone(3,()=>{
+        const time = (Date.now()-start)/1000;
+        console.log("all done @ "+time+"s");
+        callback();
+    });
+
+    runner.start(0);
 }

@@ -10,10 +10,17 @@ export function memcpy<T>(ad:T[],od:number,as:T[],os:number,len:number){
 	}
 }
 
+export const noop = ()=>{};
+
 export type KPair<K,V> = {
 	key:K,
 	value?:V
 };
+
+export type KAsync = (cb:()=>void)=>void;
+export type KAsyncGetter<R> = (cb:(r:R)=>void)=>void;
+export type KAsyncSetter<T> = (cb:()=>void,v:T)=>void;
+export type KAsyncFunc<T,R> = (cb:(r:R)=>void,v:T)=>void;
 
 export class KListNode<T> {
 
@@ -221,10 +228,67 @@ export class KLoader{
 		this.event.register(h);
 	}
 
-	load(op:(cb:()=>void)=>void){
+	load(op:KAsync){
 		this.count++;
 		op(()=>{
 			this.complete();
 		});
+	}
+}
+
+export class KSequenceRunner{
+	queue:KAsync[] = [];
+	_check(){
+		const async = this.queue.shift();
+		if(async){
+			setImmediate(()=>async(()=>this._check()));
+		}
+	}
+	add(async:KAsync){
+		this.queue.push(async);
+	}
+	start(){
+		this._check();
+	}
+}
+
+export class KDependencyRunner{
+	taskLists:KAsync[][] = [];
+	events:KEvent<void,void>[] = [];
+	add(batch:number,task:KAsync){
+		this.taskLists[batch] = this.taskLists[batch]||[];
+		this.taskLists[batch].push(task);
+	}
+	start(batch:number){
+		const taskList = this.taskLists[batch];
+		if(taskList){
+			const loader = new KLoader();
+			for(const task of taskList){
+				loader.load(task);
+			}
+			const event = this.events[batch];
+			if(event){
+				loader.onDone(()=>event.trigger());
+			}
+			loader.complete();
+		}
+	}
+	depend(batch:number,deps:number[]){
+		const dl = deps.length;
+		let dc = 0;
+		const handler = ()=>{
+			dc++;
+			if(dc===dl){
+				this.start(batch);
+			}
+		};
+		for(const dep of deps){
+			this.events[dep] = this.events[dep]||new KEvent();
+			this.events[dep].register(handler);
+		}
+	}
+	onDone(batch:number,op:()=>void){
+		this.events[batch] = this.events[batch]||new KEvent();
+		this.events[batch].register(op);
 	}
 }

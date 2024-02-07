@@ -1,6 +1,6 @@
 import Random from "../k-math-random.js";
 
-export default function test(seed?:bigint){
+export default function test(callback:()=>void,seed?:bigint){
     const counts = [0,0,0,0,0,0,0,0,0,0];
     const rnd = new Random(seed);
     console.log(rnd.initSeed);
@@ -9,4 +9,5 @@ export default function test(seed?:bigint){
         counts[Number(v)]++;
     }
     console.log(counts.join(" "));
+    callback();
 }

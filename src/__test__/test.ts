@@ -1,19 +1,25 @@
 import testLoader from "./test-loader.js";
 
-testLoader();
+import { KSequenceRunner } from "../k.js";
+
+const runner = new KSequenceRunner();
+
+runner.add(testLoader);
 
 import testMath from "./test-math.js";
 
-testMath();
+runner.add(testMath);
 
 import testRandom from "./test-math-random.js";
 
-testRandom();
+runner.add(testRandom);
 
 import testTree from "./test-tree.js";
 
-testTree();
+runner.add(testTree);
 
 import testHashTable from "./test-hashtable.js";
 
-testHashTable();
+runner.add(testHashTable);
+
+runner.start();
