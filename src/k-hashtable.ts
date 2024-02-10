@@ -1,14 +1,14 @@
-import { KList, KListNode, KPair } from "./k.js";
+import { KList, KListNode, KPair, KMap } from "./k.js";
 import { KAVLTree, KAVLTreeNode } from "./k-tree.js";
 
 type HashNode<K,V> = KListNode<KPair<K,V>>;
 
 type HashHandler<K,V> = {
     tree:KAVLTree<K,HashNode<K,V>>,
-    node?:KAVLTreeNode<K,HashNode<K,V>>
+    node:KAVLTreeNode<K,HashNode<K,V>>|undefined
 };
 
-export class KHashTable<K,V>{
+export class KHashTable<K,V> implements KMap<K,V> {
     compare:(a:K,b:K)=>number;
     hash:(k:K)=>number;
     lru:boolean = false;
@@ -16,7 +16,7 @@ export class KHashTable<K,V>{
     capacity:number = 0x100;
     buckets:KAVLTree<K,HashNode<K,V>>[] = [];
     nodes:KList<KPair<K,V>> = new KList();
-    size = 0;
+    count = 0;
     constructor(compare:(a:K,b:K)=>number,hash:(k:K)=>number,lru?:boolean){
         this.compare = compare;
         this.hash = hash;
@@ -30,7 +30,8 @@ export class KHashTable<K,V>{
         this._rehash();
     }
     _recapacity(){
-        for(let i=0; i<this.capacity-this.buckets.length; i++){
+        const rest = this.capacity-this.buckets.length;
+        for(let i=0; i<rest; i++){
             this.buckets.push(new KAVLTree<K,HashNode<K,V>>(this.compare));
         }
     }
@@ -38,7 +39,7 @@ export class KHashTable<K,V>{
         const size = this.capacity>>1;
         for(let i=0; i<size; i++){
             const tree = this.buckets[i];
-            tree.removeIf((k:K,hn?:HashNode<K,V>)=>{
+            tree.removeIf((k:K,hn:HashNode<K,V>)=>{
                 const hash = this.hash(k)|0;
                 const index = hash&this.mask;
                 if(index!==i){
@@ -54,36 +55,43 @@ export class KHashTable<K,V>{
         const hash = this.hash(k)|0;
         const index = hash&this.mask;
         const tree = this.buckets[index];
-        const node = tree.get(k);
+        const node = tree.getNode(k);
         return {tree:tree,node:node};
     }
     _remove(hh:HashHandler<K,V>){
-        this.size--;
+        this.count--;
         //remove from tree
-        hh.tree.remove(hh.node!);
+        hh.tree.removeNode(hh.node!);
         //remove from list
-        this.nodes.remove(hh.node!.value!);
+        this.nodes.removeNode(hh.node!.value!);
     }
-    set(k:K,v?:V){
+    size(){
+        return this.count;
+    }
+    set(k:K,v:V){
         //new node add to tail
         const hn = this.nodes.push({key:k,value:v});
         const found = this._find(k);
         if(found.node!==undefined){
             //key exists, replace node
-            this.nodes.remove(found.node.value!);
+            this.nodes.removeNode(found.node.value!);
             found.node.value = hn;
         }
         else{
             //key not exist, insert new node
             found.tree.set(k,hn);
-            this.size++;
+            this.count++;
             //enlarge capacity
-            if(this.size>(this.capacity>>2)+(this.capacity>>1)){
+            if(this.count>(this.capacity>>2)+(this.capacity>>1)){
                 this._enlarge();
             }
         }
     }
-    get(k:K,remove?:boolean):KPair<K,V>|undefined{
+	contains(k:K):boolean{
+        const found = this._find(k);
+        return found.node!==undefined;
+    }
+    get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined{
         const found = this._find(k);
         if(found.node===undefined){
             return undefined;
@@ -92,51 +100,51 @@ export class KHashTable<K,V>{
             const hn = found.node.value!;
             //adjust least recent use
             if(!remove&&this.lru){
-                this.nodes.remove(hn);
+                this.nodes.removeNode(hn);
                 this.nodes.insertNodeAfter(hn,null);
             }
             //remove
-            if(remove){
+            if(remove&&(condition===undefined||condition(hn.value.key,hn.value.value))){
                 this._remove(found);
             }
-            return hn.value;
+            return hn.value.value;
         }
     }
-    getFirst(remove?:boolean):KPair<K,V>|undefined{
+    getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
         const hn = this.nodes.head;
         if(hn===null){
             return undefined;
         }
         else{
-            if(remove){
+            if(remove&&(condition===undefined||condition(hn.value.key,hn.value.value))){
                 const found = this._find(hn.value.key);
                 this._remove(found);
             }
             return hn.value;
         }
     }
-    getLast(remove?:boolean):KPair<K,V>|undefined{
+    getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
         const hn = this.nodes.tail;
         if(hn===null){
             return undefined;
         }
         else{
-            if(remove){
+            if(remove&&(condition===undefined||condition(hn.value.key,hn.value.value))){
                 const found = this._find(hn.value.key);
                 this._remove(found);
             }
             return hn.value;
         }
     }
-    foreach(op:(kvp:KPair<K,V>)=>boolean|void,reverse?:boolean):boolean{
-        return this.nodes.foreach(op,reverse);
+    foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean{
+        return this.nodes.foreach((kvp:KPair<K,V>)=>op(kvp.key,kvp.value),reverse);
     }
-    removeIf(pred:(kvp:KPair<K,V>)=>boolean){
+    removeIf(pred:(k:K,v:V)=>boolean){
         for(let i=0; i<this.buckets.length; i++){
             const tree = this.buckets[i];
-            tree.removeIf((k:K,hn?:HashNode<K,V>)=>{
-                if(pred(hn!.value)){
-                    this.nodes.remove(hn!);
+            tree.removeIf((k:K,hn:HashNode<K,V>)=>{
+                if(pred(hn.value.key,hn.value.value)){
+                    this.nodes.removeNode(hn!);
                     return true;
                 }
                 else{
