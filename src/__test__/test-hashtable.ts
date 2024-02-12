@@ -6,16 +6,16 @@ import { KPair } from "../k.js";
 function validate(table:KHashTable<bigint,bigint>):string|void{
     let error:string|void = undefined;
     let last:bigint|undefined = undefined;
-    if(table.foreach((p:KPair<bigint,bigint>)=>{
+    if(table.foreach((k:bigint,v:bigint)=>{
         if(last===undefined){
-            last = p.value;
+            last = v;
         }
         else{
-            if(last-p.value!<0){
-                last = p.value!;
+            if(last-v<0){
+                last = v;
             }
             else{
-                error = "wrong order, last="+last+", this="+p.value;
+                error = "wrong order, last="+last+", this="+v;
                 return true;
             }
         }
@@ -23,16 +23,16 @@ function validate(table:KHashTable<bigint,bigint>):string|void{
         return error;
     }
     last = undefined;
-    if(table.foreach((p:KPair<bigint,bigint>)=>{
+    if(table.foreach((k:bigint,v:bigint)=>{
         if(last===undefined){
-            last = p.value;
+            last = v;
         }
         else{
-            if(last-p.value!>0){
-                last = p.value!;
+            if(last-v>0){
+                last = v;
             }
             else{
-                error = "wrong reverse order, last="+last+", this="+p.value;
+                error = "wrong reverse order, last="+last+", this="+v;
                 return true;
             }
         }
@@ -65,8 +65,7 @@ export default function test(callback:()=>void,seed?:bigint){
                 if(err){
                     console.log(err);
                 }
-                const rn = table.get(ins.key);
-                if(rn&&rn.key===ins.key&&rn.value===ins.value){
+                if(table.contains(ins.key)){
                     insertCorrect++;
                 }
                 else{
@@ -85,8 +84,7 @@ export default function test(callback:()=>void,seed?:bigint){
                 if(err){
                     console.log(err);
                 }
-                const rn = table.get(del);
-                if(rn===undefined){
+                if(!table.contains(del)){
                     deleteCorrect++;
                 }
                 else{

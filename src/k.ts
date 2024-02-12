@@ -14,13 +14,81 @@ export const noop = ()=>{};
 
 export type KPair<K,V> = {
 	key:K,
-	value?:V
+	value:V
 };
 
 export type KAsync = (cb:()=>void)=>void;
-export type KAsyncGetter<R> = (cb:(r:R)=>void)=>void;
-export type KAsyncSetter<T> = (cb:()=>void,v:T)=>void;
 export type KAsyncFunc<T,R> = (cb:(r:R)=>void,v:T)=>void;
+
+export interface KMap<K,V> {
+	size():number;
+	set(k:K,v:V):void;
+	contains(k:K):boolean;
+	get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined;
+	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
+	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
+	foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
+	removeIf(pred:(k:K,v:V)=>boolean):void;
+}
+
+export class KSingletonMap<K,V> implements KMap<K,V>{
+	key:K|undefined;
+	value:V;
+	constructor(k:K|undefined,v:V){
+		this.key = k;
+		this.value = v;
+	}
+	_get(k:K|undefined,remove?:boolean|undefined,condition?:((k:K,v:V)=>boolean)|undefined):KPair<K,V>|undefined{
+		if(this.key==undefined){
+			return undefined;
+		}
+		else{
+			if(k!==undefined&&k!==this.key){
+				return undefined;
+			}
+			else{
+				const r = {key:this.key,value:this.value};
+				if(remove&&(condition===undefined||condition(this.key,this.value))){
+					this.key = undefined;
+				}
+				return r;
+			}
+		}
+	}
+	size(): number {
+		return this.key===undefined?0:1;
+	}
+	set(k:K,v:V):void {
+		this.key = k;
+		this.value = v;
+	}
+	contains(k:K):boolean {
+		return this.key===k;
+	}
+	get(k:K,remove?:boolean|undefined,condition?:((k:K,v:V)=>boolean)|undefined):V|undefined {
+		const r = this._get(k,remove,condition);
+		return r===undefined?undefined:r.value;
+	}
+	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		return this._get(undefined,remove,condition);
+	}
+	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		return this._get(undefined,remove,condition);
+	}
+	foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean|undefined):boolean {
+		if(this.key!==undefined){
+			return !!op(this.key,this.value);
+		}
+		else{
+			return false;
+		}
+	}
+	removeIf(pred:(k:K,v:V)=>boolean):void {
+		if(this.key!==undefined&&pred(this.key,this.value)){
+			this.key = undefined;
+		}
+	}
+}
 
 export class KListNode<T> {
 
@@ -86,7 +154,7 @@ export class KList<T> {
 		return r;
 	}
 
-	remove(node:KListNode<T>|null):T|undefined{
+	removeNode(node:KListNode<T>|null):T|undefined{
 		//test empty
 		if(!node){
 			return undefined;
@@ -141,7 +209,7 @@ export class KList<T> {
 		let last:KListNode<T>|null = null;
 		while(curr!==null){
 			if(pred(curr.value)){
-				this.remove(curr);
+				this.removeNode(curr);
 				curr = last===null?this.head:last.next;
 			}
 			else{
@@ -156,11 +224,11 @@ export class KList<T> {
 	}
 
 	pop():T|undefined{
-		return this.remove(this.tail);
+		return this.removeNode(this.tail);
 	}
 
 	shift():T|undefined{
-		return this.remove(this.head);
+		return this.removeNode(this.head);
 	}
 
 	unshift(value:T):KListNode<T>{
@@ -190,8 +258,8 @@ export class KEvent<T,C> {
 			this.handlers.shift();
 		}
 		return {
-			cancel: ()=>{
-				this.handlers.remove(h$);
+			cancel:()=>{
+				this.handlers.removeNode(h$);
 			}
 		};
 	}
@@ -203,8 +271,7 @@ export class KEvent<T,C> {
 	}
 
 	once(h:(v:T,c?:C)=>void):KEventHandler{
-		let h$:KEventHandler|undefined = undefined;
-		h$ = this.register((v,c)=>{
+		const h$ = this.register((v,c)=>{
 			h$!.cancel();
 			h(v,c);
 		});
@@ -241,7 +308,7 @@ export class KSequenceRunner{
 	_check(){
 		const async = this.queue.shift();
 		if(async){
-			setImmediate(()=>async(()=>this._check()));
+			setTimeout(()=>async(()=>this._check()),0);
 		}
 	}
 	add(async:KAsync){

@@ -3,7 +3,7 @@ import { KAVLTree, bigintcmp } from "../k-tree.js";
 
 function validate<K,V>(tree:KAVLTree<K,V>):string|void{
     let error:string|void = undefined;
-    let node = tree.getLeast();
+    let node = tree.getLeastNode();
     while(node!==undefined){
         if(node._factor>1||node._factor<-1){
             error = "unbalance, factor="+node._factor;
@@ -89,7 +89,7 @@ function validate<K,V>(tree:KAVLTree<K,V>):string|void{
 export default function test(callback:()=>void,seed?:bigint){
     const rnd = new Random(seed);
     console.log(rnd.initSeed);
-    const tree = new KAVLTree<bigint,undefined>(bigintcmp);
+    const tree = new KAVLTree<bigint,void>(bigintcmp);
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;
@@ -108,8 +108,7 @@ export default function test(callback:()=>void,seed?:bigint){
                 if(err){
                     console.log(err);
                 }
-                const rn = tree.get(ins);
-                if(rn&&rn.key===ins){
+                if(tree.contains(ins)){
                     insertCorrect++;
                 }
                 else{
@@ -128,8 +127,7 @@ export default function test(callback:()=>void,seed?:bigint){
                 if(err){
                     console.log(err);
                 }
-                const rn = tree.get(del);
-                if(rn===undefined){
+                if(!tree.contains(del)){
                     deleteCorrect++;
                 }
                 else{
