@@ -1,4 +1,4 @@
-import { KDependencyRunner } from "../k.js";
+import { KDependencyRunner } from "../k-runner.js";
 
 export default function test(callback:()=>void){
 
