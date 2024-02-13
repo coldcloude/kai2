@@ -1,4 +1,6 @@
-import { KList, KListNode, KPair, KMap } from "./k.js";
+import { KPair } from "./k.js";
+import { KMap } from "./k-map.js";
+import { KList, KListNode } from "./k-list.js";
 import { KAVLTree, KAVLTreeNode } from "./k-tree.js";
 
 type HashNode<K,V> = KListNode<KPair<K,V>>;
@@ -8,7 +10,7 @@ type HashHandler<K,V> = {
     node:KAVLTreeNode<K,HashNode<K,V>>|undefined
 };
 
-export class KHashTable<K,V> implements KMap<K,V> {
+export class KHashTable<K,V> extends KMap<K,V> {
     compare:(a:K,b:K)=>number;
     hash:(k:K)=>number;
     lru:boolean = false;
@@ -16,18 +18,22 @@ export class KHashTable<K,V> implements KMap<K,V> {
     capacity:number = 0x100;
     buckets:KAVLTree<K,HashNode<K,V>>[] = [];
     nodes:KList<KPair<K,V>> = new KList();
-    count = 0;
     constructor(compare:(a:K,b:K)=>number,hash:(k:K)=>number,lru?:boolean){
+        super();
         this.compare = compare;
         this.hash = hash;
         this.lru = !!lru;
         this._recapacity();
     }
     _enlarge(){
-        this.capacity <<= 1;
-        this.mask = (this.mask<<1)|1;
-        this._recapacity();
-        this._rehash();
+        this.size++;
+        //enlarge capacity
+        if(this.size>(this.capacity>>2)+(this.capacity>>1)){
+            this.capacity <<= 1;
+            this.mask = (this.mask<<1)|1;
+            this._recapacity();
+            this._rehash();
+        }
     }
     _recapacity(){
         const rest = this.capacity-this.buckets.length;
@@ -59,55 +65,40 @@ export class KHashTable<K,V> implements KMap<K,V> {
         return {tree:tree,node:node};
     }
     _remove(hh:HashHandler<K,V>){
-        this.count--;
+        this.size--;
         //remove from tree
         hh.tree.removeNode(hh.node!);
         //remove from list
         this.nodes.removeNode(hh.node!.value!);
     }
-    size(){
-        return this.count;
-    }
-    set(k:K,v:V){
-        //new node add to tail
-        const hn = this.nodes.push({key:k,value:v});
-        const found = this._find(k);
-        if(found.node!==undefined){
-            //key exists, replace node
-            this.nodes.removeNode(found.node.value!);
-            found.node.value = hn;
-        }
-        else{
-            //key not exist, insert new node
-            found.tree.set(k,hn);
-            this.count++;
-            //enlarge capacity
-            if(this.count>(this.capacity>>2)+(this.capacity>>1)){
-                this._enlarge();
-            }
-        }
-    }
-	contains(k:K):boolean{
-        const found = this._find(k);
-        return found.node!==undefined;
-    }
-    get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined{
+    compute(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined,readonly?:boolean):KPair<K,V>|undefined{
         const found = this._find(k);
         if(found.node===undefined){
-            return undefined;
+            //not found, skip or insert
+			const r = op(undefined);
+			if(r!==undefined){
+                const hn = this.nodes.push(r);
+                found.tree.set(k,hn);
+                this._enlarge();
+            }
+            return r;
         }
         else{
-            const hn = found.node.value!;
-            //adjust least recent use
-            if(!remove&&this.lru){
-                this.nodes.removeNode(hn);
-                this.nodes.insertNodeAfter(hn,null);
-            }
-            //remove
-            if(remove&&(condition===undefined||condition(hn.value.key,hn.value.value))){
+            const hn = found.node.value;
+			const r = op(hn.value);
+			//found, remove or replace
+            if(r===undefined){
                 this._remove(found);
             }
-            return hn.value.value;
+            else{
+                //adjust least recent use
+                if(!readonly||this.lru){
+                    this.nodes.removeNode(hn);
+                    this.nodes.insertNodeAfter(hn,null);
+                }
+                hn.value = r;
+            }
+            return hn.value;
         }
     }
     getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{

@@ -1,4 +1,5 @@
-import { KMap, KPair } from ".";
+import { KPair } from "./k.js";
+import { KMap, testRemove } from "./k-map.js";
 
 function setAsSide<K,V,N extends KTreeNode<K,V,N>>(node:N|null,parent:N|null,side:number){
 	if(parent!==null){
@@ -400,13 +401,13 @@ export class KAVLTreeNode<K,V> extends KTreeNode<K,V,KAVLTreeNode<K,V>>{
 	}
 }
 
-export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V> {
+export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 
 	compare:(a:K,b:K)=>number;
 	root:N|null = null;
-	count = 0;
 
 	constructor(compare:(a:K,b:K)=>number){
+		super();
 		this.compare = compare;
 	}
 
@@ -435,25 +436,64 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V>
 		return curr;
 	}
 
+	abstract createNode(k:K,v:V):N;
 	abstract removeNode(node:N):void;
-	getNode(k:K,remove?:boolean):N|undefined{
+	abstract insertNode(node:N,nearest?:N,diff?:number):void;
+
+	computeNode(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined):N|undefined{
 		if(this.root===null){
-			return undefined;
-		}
-		else{
-			const node = this._findNearestNode(k);
-			if(this.compare(k,node.key)===0){
-				if(remove){
-					this.removeNode(node);
-				}
+			//not found, skip or insert
+			const r = op(undefined);
+			if(r!==undefined){
+				const node = this.createNode(r.key,r.value);
+				this.root = node;
+				this.size = 1;
 				return node;
 			}
 			else{
 				return undefined;
 			}
 		}
+		else{
+			const node = this._findNearestNode(k);
+			const diff = this.compare(k,node.key);
+			if(diff===0){
+				//found, remove or replace
+				const r = op({key:node.key,value:node.value});
+				if(r===undefined){
+					this.removeNode(node);
+				}
+				else{
+					node.key = r.key;
+					node.value = r.value;
+				}
+				return node;
+			}
+			else{
+				//not found, skip or insert
+				const r = op(undefined);
+				if(r!==undefined){
+					const neo = this.createNode(r.key,r.value);
+					this.insertNode(neo,node,diff);
+					return neo;
+				}
+				else{
+					return undefined;
+				}
+			}
+		}
 	}
-	getLeastNode(remove?:boolean):N|undefined{
+	getNode(k:K):N|undefined{
+		return this.computeNode(k,(kvp:KPair<K,V>|undefined)=>{
+			return kvp;
+		});
+	}
+	setNode(k:K,v:V):N{
+        return this.computeNode(k,()=>{
+            return {key:k,value:v};
+        })!;
+	}
+	getLeastNode():N|undefined{
 		if(this.root===null){
 			return undefined;
 		}
@@ -464,13 +504,10 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V>
 				curr = prev;
 				prev = curr.prev();
 			}
-			if(remove){
-				this.removeNode(curr);
-			}
 			return curr;
 		}
 	}
-	getGreatestNode(remove?:boolean):N|undefined{
+	getGreatestNode():N|undefined{
 		if(this.root===null){
 			return undefined;
 		}
@@ -481,32 +518,13 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V>
 				curr = next;
 				next = curr.next();
 			}
-			if(remove){
-				this.removeNode(curr);
-			}
 			return curr;
 		}
 	}
 
-	abstract set(k:K,v:V):N;
-	size(){
-		return this.count;
-	}
-	contains(k:K):boolean{
-		const node = this.getNode(k);
-		return node!==undefined;
-	}
-	get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined{
-		const node = this.getNode(k);
-		if(node===undefined){
-			return undefined;
-		}
-		else{
-            if(remove&&(condition===undefined||condition(node.key,node.value))){
-                this.removeNode(node);
-            }
-			return node.value;
-		}
+	compute(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined):KPair<K,V>|undefined{
+		const node = this.computeNode(k,op);
+		return node===undefined?undefined:{key:node.key,value:node.value};
 	}
 	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
 		const node = this.getLeastNode();
@@ -514,7 +532,7 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V>
 			return undefined;
 		}
 		else{
-            if(remove&&(condition===undefined||condition(node.key,node.value))){
+            if(testRemove(node.key,node.value,remove,condition)){
                 this.removeNode(node);
             }
 			return {key:node.key,value:node.value};
@@ -526,7 +544,7 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> implements KMap<K,V>
 			return undefined;
 		}
 		else{
-            if(remove&&(condition===undefined||condition(node.key,node.value))){
+            if(testRemove(node.key,node.value,remove,condition)){
                 this.removeNode(node);
             }
 			return {key:node.key,value:node.value};
@@ -566,44 +584,31 @@ export class KAVLTree<K,V> extends KTree<K,V,KAVLTreeNode<K,V>> {
 		super(compare);
 		this.compare = compare;
 	}
+	createNode(k:K,v:V):KAVLTreeNode<K,V>{
+		return new KAVLTreeNode(k,v);
+	}
+	insertNode(rst:KAVLTreeNode<K,V>,nearest?:KAVLTreeNode<K,V>,diff?:number):void {
+		nearest = nearest||this._findNearestNode(rst.key);
+		diff = diff||this.compare(rst.key,nearest.key);
+		if(diff<0){
+			nearest.left = rst;
+			rst.parent = nearest;
+			rst._side = -1;
+		}
+		else{
+			nearest.right = rst;
+			rst.parent = nearest;
+			rst._side = 1;
+		}
+		this.root = rst._rebalanceForInsert();
+		this.size++;
+	}
 	removeNode(node:KAVLTreeNode<K,V>){
 		this.root = node._eraseAndRebalance();
 		if(this.root!==null){
 			this.root._side = 0;
 		}
-		this.count--;
-	}
-	set(k:K,v:V):KAVLTreeNode<K,V>{
-		if(this.root===null){
-			this.root = new KAVLTreeNode(k,v);
-			this.count = 1;
-			return this.root;
-		}
-		else{
-			const nearest = this._findNearestNode(k);
-			const diff = this.compare(k,nearest.key);
-			if(diff===0){
-				nearest.key = k;
-				nearest.value = v;
-				return nearest;
-			}
-			else{
-				const rst = new KAVLTreeNode(k,v);
-				if(diff<0){
-					nearest.left = rst;
-					rst.parent = nearest;
-					rst._side = -1;
-				}
-				else{
-					nearest.right = rst;
-					rst.parent = nearest;
-					rst._side = 1;
-				}
-				this.root = rst._rebalanceForInsert();
-				this.count++;
-				return rst;
-			}
-		}
+		this.size--;
 	}
 }
 

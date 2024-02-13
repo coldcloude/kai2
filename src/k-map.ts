@@ -1,59 +1,100 @@
 import { KPair } from "./k.js";
 
-export interface KMap<K,V> {
-	size():number;
-	set(k:K,v:V):void;
-	contains(k:K):boolean;
-	get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined;
-	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
-	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
-	foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
-	removeIf(pred:(k:K,v:V)=>boolean):void;
+export function testRemove<K,V>(k:K,v:V,remove?:boolean,condition?:(k:K,v:V)=>boolean){
+    return remove&&(condition===undefined||condition(k,v));
 }
 
-export class KSingletonMap<K,V> implements KMap<K,V>{
+export abstract class KMap<K,V> {
+	size:number = 0;
+    abstract compute(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined,readonly?:boolean):KPair<K,V>|undefined;
+	set(k:K,v:V){
+        this.compute(k,()=>{
+            return {key:k,value:v};
+        });
+    }
+	getPair(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+        return this.compute(k,(kvp:KPair<K,V>|undefined)=>{
+            if(kvp==undefined){
+                return undefined;
+            }
+            else{
+                if(testRemove(kvp.key,kvp.value,remove,condition)){
+                    return undefined;
+                }
+                else{
+                    return kvp;
+                }
+            }
+        },true);
+    }
+	contains(k:K){
+        return this.getPair(k)!==undefined;
+    }
+	get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined{
+        const kvp = this.getPair(k,remove,condition);
+        return kvp===undefined?undefined:kvp.value;
+    }
+	abstract getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
+	abstract getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
+	abstract foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
+	abstract removeIf(pred:(k:K,v:V)=>boolean):void;
+}
+
+export class KSingletonMap<K,V> extends KMap<K,V>{
 	key:K|undefined;
 	value:V;
 	constructor(k:K|undefined,v:V){
+		super();
 		this.key = k;
 		this.value = v;
+		this.size = k===undefined?0:1;
 	}
-	_get(k:K|undefined,remove?:boolean|undefined,condition?:((k:K,v:V)=>boolean)|undefined):KPair<K,V>|undefined{
-		if(this.key==undefined){
+	_remove(){
+		this.key = undefined;
+		this.size = 0;
+	}
+	_get(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		if(this.key===undefined){
 			return undefined;
 		}
 		else{
-			if(k!==undefined&&k!==this.key){
-				return undefined;
+			const curr = {key:this.key,value:this.value};
+			if(testRemove(this.key,this.value,remove,condition)){
+				this._remove();
 			}
-			else{
-				const r = {key:this.key,value:this.value};
-				if(remove&&(condition===undefined||condition(this.key,this.value))){
-					this.key = undefined;
-				}
-				return r;
-			}
+			return curr;
 		}
 	}
-	size(): number {
-		return this.key===undefined?0:1;
-	}
-	set(k:K,v:V):void {
-		this.key = k;
-		this.value = v;
-	}
-	contains(k:K):boolean {
-		return this.key===k;
-	}
-	get(k:K,remove?:boolean|undefined,condition?:((k:K,v:V)=>boolean)|undefined):V|undefined {
-		const r = this._get(k,remove,condition);
-		return r===undefined?undefined:r.value;
+    compute(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined):KPair<K,V>|undefined{
+		if(this.key===undefined||k!==this.key){
+			//not found, skip or insert
+			const r = op(undefined);
+			if(r!==undefined){
+				this.key = r.key;
+				this.value = r.value;
+				this.size = 1;
+			}
+			return r;
+		}
+		else{
+			//found, remove or replace
+			const curr = {key:this.key,value:this.value};
+			const r = op(curr);
+			if(r===undefined){
+				this._remove();
+			}
+			else{
+				this.key = r.key;
+				this.value = r.value;
+			}
+			return curr;
+		}
 	}
 	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
-		return this._get(undefined,remove,condition);
+		return this._get(remove,condition);
 	}
 	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
-		return this._get(undefined,remove,condition);
+		return this._get(remove,condition);
 	}
 	foreach(op:(k:K,v:V)=>boolean|void):boolean {
 		if(this.key!==undefined){

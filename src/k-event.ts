@@ -4,19 +4,17 @@ export type KEventHandler = {
 	cancel:()=>void
 };
 
-export class KEvent<T,C> {
+export class KEvent<T> {
 
 	capacity:number|undefined;
 
-	context:C|undefined;
-	handlers:KList<(v:T,c?:C)=>void> = new KList();
+	handlers:KList<(v:T)=>void> = new KList();
 
-	constructor(capacity?:number,context?:C){
+	constructor(capacity?:number){
 		this.capacity = capacity;
-		this.context = context;
 	}
 
-	register(h:(v:T,c?:C)=>void):KEventHandler{
+	register(h:(v:T)=>void):KEventHandler{
 		const h$ = this.handlers.push(h);
 		if(this.capacity&&this.handlers.size>this.capacity){
 			this.handlers.shift();
@@ -29,15 +27,15 @@ export class KEvent<T,C> {
 	}
 
 	trigger(value:T){
-		this.handlers.foreach((h:(v:T,c?:C)=>void)=>{
-			h(value,this.context);
+		this.handlers.foreach((h:(v:T)=>void)=>{
+			h(value);
 		});
 	}
 
-	once(h:(v:T,c?:C)=>void):KEventHandler{
-		const h$ = this.register((v,c)=>{
+	once(h:(v:T)=>void):KEventHandler{
+		const h$ = this.register((v)=>{
 			h$!.cancel();
-			h(v,c);
+			h(v);
 		});
 		return h$;
 	}

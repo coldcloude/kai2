@@ -1,10 +1,32 @@
-import { KAsync } from ".";
+import { KAsync } from "./k.js";
 import { KEvent } from "./k-event.js";
+import { KHashTable, strhash } from "./k-hashtable.js";
+import { strcmp } from "./k-tree.js";
+
+function TaskId(id:string|number):string{
+    switch(typeof id){
+        case "string":
+            return "*"+id;
+        case "number":
+            return ":"+id;
+    }
+}
+
+export class KRunner {
+    eventMap = new KHashTable<string,KEvent<void>>(strcmp,strhash);
+    run(id:string|number,op:KAsync,...deps:(number|string)[]){
+        const tid = TaskId(id);
+    }
+    finish(id:string|number,cb:KAsync){
+
+    }
+}
+
 
 export class KLoader{
 
 	count:number = 1;
-	event:KEvent<void,void> = new KEvent();
+	event:KEvent<void> = new KEvent();
 
 	complete(){
 		this.count--;
@@ -43,7 +65,7 @@ export class KSequenceRunner{
 
 export class KDependencyRunner{
 	taskLists:KAsync[][] = [];
-	events:KEvent<void,void>[] = [];
+	events:KEvent<void>[] = [];
 	add(batch:number,task:KAsync){
 		this.taskLists[batch] = this.taskLists[batch]||[];
 		this.taskLists[batch].push(task);
