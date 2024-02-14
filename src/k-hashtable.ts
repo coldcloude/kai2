@@ -77,7 +77,15 @@ export class KHashTable<K,V> extends KMap<K,V> {
             //not found, skip or insert
 			const r = op(undefined);
 			if(r!==undefined){
-                const hn = this.nodes.push(r);
+                const hn = new KListNode(r);
+                if(this.lru){
+                    //oder by time desc
+                    this.nodes.insertNodeAfter(hn,null);
+                }
+                else{
+                    //order by time asc
+                    this.nodes.insertNodeBefore(hn,null);
+                }
                 found.tree.set(k,hn);
                 this._enlarge();
             }
@@ -91,10 +99,17 @@ export class KHashTable<K,V> extends KMap<K,V> {
                 this._remove(found);
             }
             else{
-                //adjust least recent use
-                if(!readonly||this.lru){
+                if(this.lru){
+                    //order by use time desc
                     this.nodes.removeNode(hn);
                     this.nodes.insertNodeAfter(hn,null);
+                }
+                else {
+                    //order by set time asc
+                    if(!readonly){
+                        this.nodes.removeNode(hn);
+                        this.nodes.insertNodeBefore(hn,null);
+                    }
                 }
                 hn.value = r;
             }
