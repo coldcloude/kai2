@@ -3,6 +3,54 @@ import { KEvent } from "./k-event.js";
 import { KHashTable, strhash } from "./k-hashtable.js";
 import { strcmp } from "./k-tree.js";
 
+class Task{
+	id:string;
+	op:KAsync;
+	started = false;
+	finished = false;
+	_event = new KEvent<void>();
+	_rests = new KHashTable<string,void>(strcmp,strhash);
+	_start(){
+		if(this._rests.size===0){
+			if(!this.started){
+				this.started = true;
+				this.op(()=>{
+					this.finished = true;
+					this._event.trigger();
+				});
+			}
+		}
+	}
+	constructor(id:string,op:KAsync,deps:Task[]){
+		this.id = id;
+		this.op = op;
+		//add self
+		this._rests.set(id);
+		//add unfinished deps
+		for(const task of deps){
+			if(!task.finished){
+				this._rests.set(task.id);
+				task.onFinish(()=>{
+					this._rests.get(task.id,true);
+					this._start();
+				});
+			}
+		}
+	}
+	start(){
+		this._rests.get(this.id,true);
+		this._start();
+	}
+	onFinish(cb:()=>void){
+		if(!this.finished){
+			this._event.register(cb);
+		}
+		else{
+			cb();
+		}
+	}
+}
+
 function TaskId(id:string|number):string{
     switch(typeof id){
         case "string":
@@ -13,93 +61,59 @@ function TaskId(id:string|number):string{
 }
 
 export class KRunner {
-    eventMap = new KHashTable<string,KEvent<void>>(strcmp,strhash);
-    run(id:string|number,op:KAsync,...deps:(number|string)[]){
+    taskMap = new KHashTable<string,Task>(strcmp,strhash);
+	sn = 0;
+	_findDeps(deps:(number|string)[]){
+		const dts:Task[] = [];
+		for(const d of deps){
+			const dtid = TaskId(d);
+			const dtask = this.taskMap.get(dtid)!;
+			dts.push(dtask);
+		}
+		return dts;
+	}
+    runTask(id:string|number,op:KAsync,...deps:(number|string)[]){
         const tid = TaskId(id);
+		const dts = this._findDeps(deps);
+		const task = new Task(tid,op,dts);
+		this.taskMap.set(tid,task);
+		task.start();
     }
-    finish(id:string|number,cb:KAsync){
-
+    run(op:KAsync,...deps:(number|string)[]){
+        const tid = "?"+(this.sn++);
+		const dts = this._findDeps(deps);
+		const task = new Task(tid,op,dts);
+		task.start();
     }
 }
 
-
-export class KLoader{
-
-	count:number = 1;
-	event:KEvent<void> = new KEvent();
-
-	complete(){
-		this.count--;
-		if(this.count===0){
-			this.event.trigger();
+export function KSequence(ops:KAsync[]){
+	return (cb?:()=>void)=>{
+		const runner = new KRunner();
+		for(let i=0; i<ops.length; i++){
+			if(i===0){
+				runner.runTask(i,ops[i]);
+			}
+			else{
+				runner.runTask(i,ops[i],i-1);
+			}
 		}
-	}
-
-	onDone(h:()=>void){
-		this.event.register(h);
-	}
-
-	load(op:KAsync){
-		this.count++;
-		op(()=>{
-			this.complete();
-		});
-	}
+		if(cb!==undefined){
+			runner.run(cb,ops.length-1);
+		}
+	};
 }
 
-export class KSequenceRunner{
-	queue:KAsync[] = [];
-	_check(){
-		const async = this.queue.shift();
-		if(async){
-			setTimeout(()=>async(()=>this._check()),0);
+export function KConcurrent(ops:KAsync[]){
+	return (cb?:()=>void)=>{
+		const runner = new KRunner();
+		const deps:number[] = [];
+		for(let i=0; i<ops.length; i++){
+			runner.runTask(i,ops[i]);
+			deps.push(i);
 		}
-	}
-	add(async:KAsync){
-		this.queue.push(async);
-	}
-	start(){
-		this._check();
-	}
-}
-
-export class KDependencyRunner{
-	taskLists:KAsync[][] = [];
-	events:KEvent<void>[] = [];
-	add(batch:number,task:KAsync){
-		this.taskLists[batch] = this.taskLists[batch]||[];
-		this.taskLists[batch].push(task);
-	}
-	start(batch:number){
-		const taskList = this.taskLists[batch];
-		if(taskList){
-			const loader = new KLoader();
-			for(const task of taskList){
-				loader.load(task);
-			}
-			const event = this.events[batch];
-			if(event){
-				loader.onDone(()=>event.trigger());
-			}
-			loader.complete();
+		if(cb!==undefined){
+			runner.run(cb,...deps);
 		}
-	}
-	depend(batch:number,deps:number[]){
-		const dl = deps.length;
-		let dc = 0;
-		const handler = ()=>{
-			dc++;
-			if(dc===dl){
-				this.start(batch);
-			}
-		};
-		for(const dep of deps){
-			this.events[dep] = this.events[dep]||new KEvent();
-			this.events[dep].register(handler);
-		}
-	}
-	onDone(batch:number,op:()=>void){
-		this.events[batch] = this.events[batch]||new KEvent();
-		this.events[batch].register(op);
-	}
+	};
 }
