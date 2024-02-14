@@ -1,6 +1,6 @@
 import testLoader from "./test-loader.js";
 
-import { KSequenceRunner } from "../k.js";
+import { KSequenceRunner } from "../k-runner.js";
 
 const runner = new KSequenceRunner();
 
