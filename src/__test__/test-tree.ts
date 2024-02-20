@@ -86,7 +86,7 @@ function validate<K,V>(tree:KAVLTree<K,V>):string|void{
     }
 }
 
-export default function test(callback:()=>void,seed?:bigint){
+export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log(rnd.initSeed);
     const tree = new KAVLTree<bigint,void>(bigintcmp);
@@ -144,5 +144,4 @@ export default function test(callback:()=>void,seed?:bigint){
         }
     }
     console.log("insert correct: "+insertCorrect+", "+"insert wrong: "+insertWrong+", "+"delete correct: "+deleteCorrect+", "+"delete wrong: "+deleteWrong);
-    callback();
 }
