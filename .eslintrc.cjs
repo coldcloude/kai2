@@ -31,7 +31,7 @@ module.exports = {
     ],
     "rules": {
         "@typescript-eslint/semi": ["warn","always"],
-        "@typescript-eslint/no-unused-vars": ["warn"],
+        "@typescript-eslint/no-unused-vars": ["warn",{"destructuredArrayIgnorePattern": "^_"}],
         "@typescript-eslint/no-this-alias": ["warn"],
     },
 };
