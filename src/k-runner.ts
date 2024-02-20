@@ -1,13 +1,24 @@
-import { KAsync } from "./k.js";
 import { KEvent } from "./k-event.js";
 import { KHashTable, strhash } from "./k-hashtable.js";
 import { strcmp } from "./k-tree.js";
 
-class Task{
-	id:string;
-	op:KAsync;
+export type KAsync = (cb:()=>void)=>void;
+
+export abstract class IKTask {
 	started = false;
 	finished = false;
+	abstract start():void;
+	abstract onFinish(cb:()=>void):void;
+}
+
+export interface IKRunner {
+	runTask(id:string|number,op:KAsync,...deps:(number|string)[]):IKTask;
+    run(op:KAsync,...deps:(number|string)[]):IKTask;
+}
+
+class Task extends IKTask {
+	id:string;
+	op:KAsync;
 	_event = new KEvent<void>();
 	_rests = new KHashTable<string,void>(strcmp,strhash);
 	_start(){
@@ -22,6 +33,7 @@ class Task{
 		}
 	}
 	constructor(id:string,op:KAsync,deps:Task[]){
+		super();
 		this.id = id;
 		this.op = op;
 		//add self
@@ -60,14 +72,14 @@ function TaskId(id:string|number):string{
     }
 }
 
-export class KRunner {
-    taskMap = new KHashTable<string,Task>(strcmp,strhash);
-	sn = 0;
+export class KRunner implements IKRunner {
+    _taskMap = new KHashTable<string,Task>(strcmp,strhash);
+	_sn = 0;
 	_findDeps(deps:(number|string)[]){
 		const dts:Task[] = [];
 		for(const d of deps){
 			const dtid = TaskId(d);
-			const dtask = this.taskMap.get(dtid)!;
+			const dtask = this._taskMap.get(dtid)!;
 			dts.push(dtask);
 		}
 		return dts;
@@ -76,20 +88,22 @@ export class KRunner {
         const tid = TaskId(id);
 		const dts = this._findDeps(deps);
 		const task = new Task(tid,op,dts);
-		this.taskMap.set(tid,task);
+		this._taskMap.set(tid,task);
 		task.start();
+		return task;
     }
     run(op:KAsync,...deps:(number|string)[]){
-        const tid = "?"+(this.sn++);
+        const tid = "?"+(this._sn++);
 		const dts = this._findDeps(deps);
 		const task = new Task(tid,op,dts);
 		task.start();
+		return task;
     }
 }
 
-export function KSequence(ops:KAsync[]){
+export function KSequence(ops:KAsync[],runner?:IKRunner){
 	return (cb?:()=>void)=>{
-		const runner = new KRunner();
+		runner = runner||new KRunner();
 		for(let i=0; i<ops.length; i++){
 			if(i===0){
 				runner.runTask(i,ops[i]);
@@ -104,9 +118,9 @@ export function KSequence(ops:KAsync[]){
 	};
 }
 
-export function KConcurrent(ops:KAsync[]){
+export function KConcurrent(ops:KAsync[],runner?:IKRunner){
 	return (cb?:()=>void)=>{
-		const runner = new KRunner();
+		runner = runner||new KRunner();
 		const deps:number[] = [];
 		for(let i=0; i<ops.length; i++){
 			runner.runTask(i,ops[i]);

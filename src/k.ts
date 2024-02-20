@@ -16,6 +16,3 @@ export type KPair<K,V> = {
 	key:K,
 	value:V
 };
-
-export type KAsync = (cb:()=>void)=>void;
-export type KAsyncFunc<T,R> = (cb:(r:R)=>void,v:T)=>void;

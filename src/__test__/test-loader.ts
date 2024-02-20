@@ -1,43 +1,41 @@
-import { KConcurrent, KSequence } from "../k-runner.js";
+import { KAConcurrent, KASequence } from "../k-async.js";
 
-export default function test(callback:()=>void){
-    
+export default async function test(){
+
     const start = Date.now();
 
-    const all = KSequence([
-        (cb:()=>void)=>{
+    await KASequence([
+        ()=>{
             const time = (Date.now()-start)/1000;
             console.log("batch 0 start @ "+time+"s");
-            setTimeout(cb,1000);
+            return new Promise((cb)=>setTimeout(cb,1000));
         },
-        KConcurrent([
-            KConcurrent([
-                (cb:()=>void)=>{
+        async ()=>await KAConcurrent([
+            async ()=>await KAConcurrent([
+                ()=>{
                     const time = (Date.now()-start)/1000;
                     console.log("batch 1 task 0 start @ "+time+"s");
-                    setTimeout(cb,500);
+                    return new Promise((cb)=>setTimeout(cb,500));
                 },
-                (cb:()=>void)=>{
+                ()=>{
                     const time = (Date.now()-start)/1000;
                     console.log("batch 1 task 1 start @ "+time+"s");
-                    setTimeout(cb,1500);
+                    return new Promise((cb)=>setTimeout(cb,1500));
                 }
             ]),
-            (cb:()=>void)=>{
+            ()=>{
                 const time = (Date.now()-start)/1000;
                 console.log("batch 2 start @ "+time+"s");
-                setTimeout(cb,1000);
+                return new Promise((cb)=>setTimeout(cb,1000));
             }
         ]),
-        (cb:()=>void)=>{
+        ()=>{
             const time = (Date.now()-start)/1000;
             console.log("batch 3 start @ "+time+"s");
-            setTimeout(cb,1000);
+            return new Promise((cb)=>setTimeout(cb,1000));
         }
     ]);
-    all(()=>{
-        const time = (Date.now()-start)/1000;
-        console.log("all done @ "+time+"s");
-        callback();
-    });
+
+    const time = (Date.now()-start)/1000;
+    console.log("all done @ "+time+"s");
 }
