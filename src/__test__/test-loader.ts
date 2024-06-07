@@ -1,6 +1,6 @@
 import { KAConcurrent, KASequence } from "../k-async.js";
 
-export default async function test(){
+export default async function testAsyncLoader(){
 
     const start = Date.now();
 
