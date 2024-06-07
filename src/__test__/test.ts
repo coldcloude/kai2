@@ -17,3 +17,7 @@ testTree();
 import testHashTable from "./test-hashtable.js";
 
 testHashTable();
+
+import testAsyncLoader from "./test-loader.js";
+
+testAsyncLoader();

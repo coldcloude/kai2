@@ -2,6 +2,7 @@ export * from './k.js';
 export * from './k-list.js';
 export * from './k-event.js';
 export * from './k-runner.js';
+export * from './k-async.js';
 export * from './k-map.js';
 export * from './k-tree.js';
 export * from './k-hashtable.js';
