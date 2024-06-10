@@ -116,7 +116,7 @@ export class DateFormat{
         this.ps.foreach((start,pp)=>{
             if(offset<start){
                 rst += this.pattern.substring(offset,start);
-                offset += pp.length;
+                offset = start;
             }
             rst += pp.format(date);
             offset += pp.length;
