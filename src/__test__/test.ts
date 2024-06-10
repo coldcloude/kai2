@@ -21,3 +21,7 @@ testHashTable();
 import testIterator from "./test-iterator.js";
 
 testIterator();
+
+import testDateFormat from "./test-date.js";
+
+testDateFormat();
