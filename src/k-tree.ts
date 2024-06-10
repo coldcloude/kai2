@@ -499,10 +499,8 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 		}
 		else{
 			let curr = this.root;
-			let prev:N|undefined = curr.prev();
-			if(prev!==undefined){
-				curr = prev;
-				prev = curr.prev();
+			while(curr.left!==null){
+				curr = curr.left;
 			}
 			return curr;
 		}
@@ -513,10 +511,8 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 		}
 		else{
 			let curr = this.root;
-			let next:N|undefined = curr.next();
-			if(next!==undefined){
-				curr = next;
-				next = curr.next();
+			while(curr.right!==null){
+				curr = curr.right;
 			}
 			return curr;
 		}
