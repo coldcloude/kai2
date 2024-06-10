@@ -65,7 +65,8 @@ export function fix0Symmetric(num:number,s:number){
 	return num>s?top-num:num;
 }
 
-export function pad0(num:number,len:number,radix:number):string{
+export function pad0(num:number,len:number,radix?:number):string{
+	radix = radix||10;
 	let str = num.toString(radix);
 	while(str.length<len){
 		str = "0"+str;
