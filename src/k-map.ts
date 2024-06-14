@@ -34,8 +34,6 @@ export abstract class KMap<K,V> {
         const kvp = this.getPair(k,remove,condition);
         return kvp===undefined?undefined:kvp.value;
     }
-	abstract getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
-	abstract getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined;
 	abstract foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
 	abstract removeIf(pred:(k:K,v:V)=>boolean):void;
 }
@@ -49,18 +47,18 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 		this.value = v;
 		this.size = k===undefined?0:1;
 	}
-	_remove(){
+	remove(){
 		this.key = undefined;
 		this.size = 0;
 	}
-	_get(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+	peek(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
 		if(this.key===undefined){
 			return undefined;
 		}
 		else{
 			const curr = {key:this.key,value:this.value};
 			if(testRemove(this.key,this.value,remove,condition)){
-				this._remove();
+				this.remove();
 			}
 			return curr;
 		}
@@ -81,7 +79,7 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 			const curr = {key:this.key,value:this.value};
 			const r = op(curr);
 			if(r===undefined){
-				this._remove();
+				this.remove();
 			}
 			else{
 				this.key = r.key;
@@ -89,12 +87,6 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 			}
 			return curr;
 		}
-	}
-	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
-		return this._get(remove,condition);
-	}
-	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
-		return this._get(remove,condition);
 	}
 	foreach(op:(k:K,v:V)=>boolean|void):boolean {
 		if(this.key!==undefined){

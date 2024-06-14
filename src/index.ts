@@ -5,6 +5,7 @@ export * from './k-async.js';
 export * from './k-map.js';
 export * from './k-tree.js';
 export * from './k-hashtable.js';
+export * from './k-statistic.js';
 export * from './k-math.js';
 export * from './k-math-random.js';
 export * from "./k-date.js";
