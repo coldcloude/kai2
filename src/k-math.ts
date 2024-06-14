@@ -1,3 +1,10 @@
+export const MAX_INT8 = 0x0000007f|0;
+export const MIN_INT8 = 0xffffff80|0;
+export const MAX_INT16 = 0x00007fff|0;
+export const MIN_INT16 = 0xffff8000|0;
+export const MAX_INT32 = 0x7fffffff|0;
+export const MIN_INT32 = 0x80000000|0;
+
 const NUM2HEX = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
 const HEX2NUM = new Map<string,number>();
 for(let i=0; i<NUM2HEX.length; i++){
