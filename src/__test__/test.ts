@@ -25,3 +25,7 @@ testIterator();
 import testDateFormat from "./test-date.js";
 
 testDateFormat();
+
+import testNormalDistribution from "./test-dist-norm.js";
+
+testNormalDistribution();

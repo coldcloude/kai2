@@ -436,6 +436,18 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 		return curr;
 	}
 
+	_testAndRemove(node:N|undefined,remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		if(node===undefined){
+			return undefined;
+		}
+		else{
+            if(testRemove(node.key,node.value,remove,condition)){
+                this.removeNode(node);
+            }
+			return {key:node.key,value:node.value};
+		}
+	}
+
 	abstract createNode(k:K,v:V):N;
 	abstract removeNode(node:N):void;
 	abstract insertNode(node:N,nearest?:N,diff?:number):void;
@@ -517,6 +529,27 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 			return curr;
 		}
 	}
+	getFloorNode(k:K):N|undefined{
+		if(this.root===null){
+			return undefined;
+		}
+		else{
+			const curr = this._findNearestNode(k);
+			const sign = this.compare(curr.key,k);
+			return sign<=0?curr:curr.prev();
+		}
+	}
+	getCeilNode(k:K):N|undefined{
+		if(this.root===null){
+			return undefined;
+		}
+		else{
+			const curr = this._findNearestNode(k);
+			const sign = this.compare(curr.key,k);
+			return sign>=0?curr:curr.next();
+		}
+	}
+
 
 	compute(k:K,op:(kvp:KPair<K,V>|undefined)=>KPair<K,V>|undefined):KPair<K,V>|undefined{
 		const node = this.computeNode(k,op);
@@ -524,27 +557,19 @@ export abstract class KTree<K,V,N extends KTreeNode<K,V,N>> extends KMap<K,V> {
 	}
 	getFirst(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
 		const node = this.getLeastNode();
-		if(node===undefined){
-			return undefined;
-		}
-		else{
-            if(testRemove(node.key,node.value,remove,condition)){
-                this.removeNode(node);
-            }
-			return {key:node.key,value:node.value};
-		}
+		return this._testAndRemove(node,remove,condition);
 	}
 	getLast(remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
 		const node = this.getGreatestNode();
-		if(node===undefined){
-			return undefined;
-		}
-		else{
-            if(testRemove(node.key,node.value,remove,condition)){
-                this.removeNode(node);
-            }
-			return {key:node.key,value:node.value};
-		}
+		return this._testAndRemove(node,remove,condition);
+	}
+	getOrBefore(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		const node = this.getFloorNode(k);
+		return this._testAndRemove(node,remove,condition);
+	}
+	getOrAfter(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):KPair<K,V>|undefined{
+		const node = this.getCeilNode(k);
+		return this._testAndRemove(node,remove,condition);
 	}
 	foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean{
 		let curr:N|undefined = reverse?this.getGreatestNode():this.getLeastNode();
