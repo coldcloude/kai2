@@ -75,8 +75,31 @@ export function fix0Symmetric(num:number,s:number){
 export function pad0(num:number,len:number,radix?:number):string{
 	radix = radix||10;
 	let str = num.toString(radix);
+	let sign = "";
+	if(str.startsWith("-")){
+		sign = "-";
+		str = str.substring(1);
+	}
 	while(str.length<len){
 		str = "0"+str;
 	}
-	return str;
+	return sign+str;
+}
+
+export function toFixed(num:number,point:number,radix?:number):string{
+	radix = radix||10;
+	if(point<=0){
+		return num.toString(radix);
+	}
+	else{
+		const integer = Math.round(num*Math.pow(10,point))|0;
+		let str = pad0(integer,point+1,radix);
+		let sign = "";
+		if(str.startsWith("-")){
+			sign = "-";
+			str = str.substring(1);
+		}
+		const prelen = str.length-point;
+		return sign+str.substring(0,prelen)+"."+str.substring(prelen);
+	}
 }

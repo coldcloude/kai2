@@ -1,5 +1,5 @@
 import { arrayStream } from "./k-iterator.js";
-import { KAVLTree, numcmp } from "./k-tree";
+import { KAVLTree, numcmp } from "./k-tree.js";
 
 export type Histogram = {
     min: number,
@@ -7,24 +7,12 @@ export type Histogram = {
     histo: number[]
 };
 
-export function histogram(n:number,...valss:number[][]):Histogram{
-    let min = Number.NaN;
-    let max = Number.NaN;
+export function histogramFixed(n:number,min:number,max:number,...valss:number[][]):Histogram{
     const histo:number[] = [];
     for(let i=0; i<(n|0); i++){
         histo.push(0);
     }
-    if(valss.length>0){
-        arrayStream(valss).flatMap((vals)=>arrayStream(vals)).foreach(function(v){
-            if(!isNaN(v)){
-                if(isNaN(min)||v<min){
-                    min = v;
-                }
-                if(isNaN(max)||max<v){
-                    max = v;
-                }
-            }
-        });
+    if(valss.length>0&&!isNaN(min)&&!isNaN(max)){
         if(!isNaN(min)&&!isNaN(max)){
             const gap = (max-min)/n;
             arrayStream(valss).flatMap((vals)=>arrayStream(vals)).foreach(function(v){
@@ -40,6 +28,24 @@ export function histogram(n:number,...valss:number[][]):Histogram{
         max: max,
         histo: histo
     };
+}
+
+export function histogram(n:number,...valss:number[][]):Histogram{
+    let min = Number.NaN;
+    let max = Number.NaN;
+    if(valss.length>0){
+        arrayStream(valss).flatMap((vals)=>arrayStream(vals)).foreach(function(v){
+            if(!isNaN(v)){
+                if(isNaN(min)||v<min){
+                    min = v;
+                }
+                if(isNaN(max)||max<v){
+                    max = v;
+                }
+            }
+        });
+    }
+    return histogramFixed(n,min,max,...valss);
 }
 
 export type PercentValue = {
