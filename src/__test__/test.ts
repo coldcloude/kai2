@@ -1,6 +1,6 @@
-import testLoader from "./test-loader.js";
+import testAsyncLoader from "./test-loader.js";
 
-await testLoader();
+await testAsyncLoader();
 
 import testMath from "./test-math.js";
 
@@ -18,6 +18,14 @@ import testHashTable from "./test-hashtable.js";
 
 testHashTable();
 
-import testAsyncLoader from "./test-loader.js";
+import testIterator from "./test-iterator.js";
 
-testAsyncLoader();
+testIterator();
+
+import testDateFormat from "./test-date.js";
+
+testDateFormat();
+
+import testNormalDistribution from "./test-dist-norm.js";
+
+testNormalDistribution();
