@@ -1,4 +1,5 @@
 export * from './k.js';
+export * from "./k-iterator.js";
 export * from './k-list.js';
 export * from './k-event.js';
 export * from './k-async.js';
