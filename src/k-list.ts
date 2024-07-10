@@ -92,9 +92,7 @@ export class KList<T> {
 				if(op(curr.value)){
 					return true;
 				}
-				else{
-					curr = prev;
-				}
+				curr = prev;
 			}
 		}
 		else{
@@ -104,9 +102,7 @@ export class KList<T> {
 				if(op(curr.value)){
 					return true;
 				}
-				else{
-					curr = next;
-				}
+				curr = next;
 			}
 		}
 		return false;
