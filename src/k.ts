@@ -16,3 +16,6 @@ export type KPair<K,V> = {
 	key:K,
 	value:V
 };
+
+export const FALSE = 0;
+export const TRUE = 1;
