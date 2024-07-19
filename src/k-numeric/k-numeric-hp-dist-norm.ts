@@ -49,7 +49,7 @@ export default class NormalDistribution {
         this.standardDeviation = sd===undefined?ONE:sd;
         this.___random = rng===undefined?new RandomWell19937c():rng;
 		if(!this.standardDeviation.isPos()){
-			throw "NotStrictlyPositiveException: "+sd;
+			throw new Error("NotStrictlyPositiveException: "+sd);
 		}
 		this.___logStandardDeviationPlusHalfLog2Pi = this.standardDeviation.ln().add(HALF.mul(TWO.mul(PI).ln()));
     }
@@ -72,13 +72,13 @@ export default class NormalDistribution {
     }
     inverseCumulativeProbability(p:Decimal):Decimal{
         if (p.isNeg() || p.gt(ONE)) {
-            throw "OutOfRangeException: "+p;
+            throw new Error("OutOfRangeException: "+p);
         }
         return this.mean.add(this.standardDeviation.mul(SQRT2).mul(erfInv(TWO.mul(p).sub(ONE))));
     }
     probability(x0:Decimal,x1:Decimal):Decimal{
         if (x0.gt(x1)) {
-            throw "NumberIsTooLargeException: "+x0+","+x1;
+            throw new Error("NumberIsTooLargeException: "+x0+","+x1);
         }
         const denom = this.standardDeviation.mul(SQRT2);
         const v0 = x0.sub(this.mean).div(denom);

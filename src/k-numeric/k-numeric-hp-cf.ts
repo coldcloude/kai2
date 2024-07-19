@@ -106,10 +106,10 @@ export default abstract class ContinuedFraction {
 			hN = hPrev.mul(deltaN);
 
 			if (!hN.isFinite()) {
-				throw "ConvergenceException";
+				throw new Error("ConvergenceException");
 			}
 			if (hN.isNaN()) {
-				throw "ConvergenceException";
+				throw new Error("ConvergenceException");
 			}
 
 			if (deltaN.sub(ONE).abs().lt(epsilon)) {
@@ -123,7 +123,7 @@ export default abstract class ContinuedFraction {
 		}
 
 		if (n >= maxIterations) {
-			throw "MaxCountExceededException: "+maxIterations;
+			throw new Error("MaxCountExceededException: "+maxIterations);
 		}
 
 		return hN;

@@ -177,10 +177,10 @@ const INV_GAMMA1P_M1_C13 = new Decimal("-0.205633841697760710345015413002057E-06
 function invGamma1pm1(x:Decimal):Decimal{
 
     if (x.lt(HALF.neg())) {
-        throw "NumberIsTooSmallException: ";
+        throw new Error("NumberIsTooSmallException: ");
     }
     if (x.gt(1.5)) {
-        throw "NumberIsTooLargeException: "+x;
+        throw new Error("NumberIsTooLargeException: "+x);
     }
 
     const t = x.lte(HALF) ? x : x.sub(HALF).sub(HALF);
@@ -302,7 +302,7 @@ function regularizedGammaPImpl(a:Decimal,x:Decimal,epsilon:Decimal,maxIterations
             sum = sum.add(an);
         }
         if (n >= maxIterations) {
-            throw "MaxCountExceededException: "+maxIterations;
+            throw new Error("MaxCountExceededException: "+maxIterations);
         } else if (!sum.isFinite()) {
             return ONE;
         } else {
