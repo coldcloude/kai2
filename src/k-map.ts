@@ -34,6 +34,19 @@ export abstract class KMap<K,V> {
         const kvp = this.getPair(k,remove,condition);
         return kvp===undefined?undefined:kvp.value;
     }
+	computeIfAbsent(k:K,creator:(kk?:K)=>V|undefined):V|undefined{
+		const rkv = this.compute(k,kv=>{
+			if(kv===undefined){
+				const v = creator(k);
+				kv = v===undefined?undefined:{
+					key: k,
+					value: v
+				};
+			}
+			return kv;
+		});
+		return rkv===undefined?undefined:rkv.value;
+	}
 	abstract foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
 	abstract removeIf(pred:(k:K,v:V)=>boolean):void;
 	keyToArray():K[]{
