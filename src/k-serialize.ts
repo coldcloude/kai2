@@ -1,7 +1,7 @@
-import { KHashTable, strhash } from "./k-hashtable";
-import { KList } from "./k-list";
-import { KMap } from "./k-map";
-import { strcmp } from "./k-tree";
+import { KHashTable, strhash } from "./k-hashtable.js";
+import { KList } from "./k-list.js";
+import { KMap } from "./k-map.js";
+import { strcmp } from "./k-tree.js";
 
 export type KValue = number|string|KObject|KValue[];
 

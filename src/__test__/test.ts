@@ -87,3 +87,7 @@ testNormalDistribution();
 import testSerialize from "./test-serialize.js";
 
 testSerialize();
+
+import testFormatXml from "./text-xml.js";
+
+testFormatXml("D:\\test\\test.tmx");
