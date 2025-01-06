@@ -1,5 +1,5 @@
-import * as fs from "node:fs"
-import { formatXml, KXMLDocument, KXMLTag } from "../k-xml.js";
+import * as fs from "node:fs";
+import { formatXml, KXMLDocument } from "../k-xml.js";
 
 export default function test(file:string){
     const doc:KXMLDocument = {
@@ -8,8 +8,7 @@ export default function test(file:string){
             encoding: "UTF-8"
         },
         dtd: {
-            rootTagName: "map",
-            contents: []
+            rootTagName: "map"
         },
         rootTag: {
             name: "map",
@@ -34,8 +33,7 @@ export default function test(file:string){
                         ["firstgid","1"],
                         ["source","testcg.tsx"]
                     ],
-                    type: "single",
-                    children: []
+                    type: "single"
                 },
                 {
                     name: "layer",
@@ -96,8 +94,7 @@ export default function test(file:string){
                                 ["width","372"],
                                 ["height","473"]
                             ],
-                            type: "single",
-                            children: []
+                            type: "single"
                         }
                     ]
                 }

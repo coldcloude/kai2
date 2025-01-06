@@ -1,5 +1,4 @@
 import { KList } from "./k-list.js";
-import { KPair } from "./k.js";
 
 export type KXMLHeader = {
     version: string
@@ -8,21 +7,23 @@ export type KXMLHeader = {
 
 export type KXMLDTD = {
     rootTagName: string,
-    contents: string[]
+    dtdType?: "SYSTEM"|"PUBLIC",
+    dtdName?: string,
+    dtdUrl?: string
 };
 
 export type KXMLNode = KXMLTag|string;
 
 export type KXMLTag = {
     name: string,
-    attributes: [string,string][],
     type: "2-side"|"1-side"|"single",
-    children: (KXMLTag|string)[]
+    attributes?: [string,string][],
+    children?: (KXMLTag|string)[]
 };
 
 export type KXMLDocument = {
-    header: KXMLHeader|undefined,
-    dtd: KXMLDTD|undefined,
+    header?: KXMLHeader,
+    dtd?: KXMLDTD,
     rootTag: KXMLTag
 };
 
@@ -34,8 +35,14 @@ export function formatXml(doc:KXMLDocument, indent?:string):string{
     }
     if(doc.dtd!==undefined){
         rst += "<!DOCTYPE "+doc.dtd.rootTagName;
-        for(const content of doc.dtd.contents){
-            rst += " "+content;
+        if(doc.dtd.dtdType!==undefined){
+            rst += " "+doc.dtd.dtdType;
+        }
+        if(doc.dtd.dtdName!==undefined){
+            rst += " \""+doc.dtd.dtdName+"\"";
+        }
+        if(doc.dtd.dtdUrl!==undefined){
+            rst += " \""+doc.dtd.dtdUrl+"\"";
         }
         rst += ">\n";
     }
@@ -50,8 +57,10 @@ export function formatXml(doc:KXMLDocument, indent?:string):string{
                 rst += "\n";
             }
             rst += indents+"<"+tag.name;
-            for(const [key,value] of tag.attributes){
-                rst += " "+key+"=\""+value+"\"";
+            if(tag.attributes!==undefined){
+                for(const [key,value] of tag.attributes){
+                    rst += " "+key+"=\""+value+"\"";
+                }
             }
             if(tag.type==="single"){
                 rst += "/>";
@@ -60,7 +69,7 @@ export function formatXml(doc:KXMLDocument, indent?:string):string{
                 rst += ">";
             }
         }
-        else if(index<tag.children.length){
+        else if(tag.children!==undefined&&index<tag.children.length){
             stack.push([tag,index+1,indents]);
             const child = tag.children[index];
             if(typeof child==="string"){
