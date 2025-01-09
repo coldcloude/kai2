@@ -138,4 +138,18 @@ export class KList<T> {
 	unshift(value:T):KListNode<T>{
 		return this.insertAfter(value,null);
 	}
+
+	toArray():T[]{
+		const arr:T[] = [];
+		this.foreach(v=>{
+			arr.push(v);
+		});
+		return arr;
+	}
+
+	fromArray(arr:T[]){
+		for(const v of arr){
+			this.push(v);
+		}
+	}
 }

@@ -49,6 +49,32 @@ export abstract class KMap<K,V> {
 	}
 	abstract foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
 	abstract removeIf(pred:(k:K,v:V)=>boolean):void;
+	keyToArray():K[]{
+		const arr:K[] = [];
+		this.foreach((k)=>{
+			arr.push(k);
+		});
+		return arr;
+	}
+	valueToArray():V[]{
+		const arr:V[] = [];
+		this.foreach((k,v)=>{
+			arr.push(v);
+		});
+		return arr;
+	}
+	entryToArray():[K,V][]{
+		const arr:[K,V][] = [];
+		this.foreach((k,v)=>{
+			arr.push([k,v]);
+		});
+		return arr;
+	}
+	fromArray(arr:[K,V][]){
+		for(const [k,v] of arr){
+			this.set(k,v);
+		}
+	}
 }
 
 export class KSingletonMap<K,V> extends KMap<K,V>{
