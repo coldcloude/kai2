@@ -19,3 +19,27 @@ export type KPair<K,V> = {
 
 export const FALSE = 0;
 export const TRUE = 1;
+
+export function removeIf<T>(arr:T[],pred:(v:T)=>boolean):T[]{
+	const removes:T[] = [];
+	let src = 0;
+	let dst = 0;
+	while(src<arr.length){
+		const v = arr[src];
+		if(pred(v)){
+			removes.push(v);
+			src++;
+		}
+		else{
+			if(dst!==src){
+				arr[dst] = v;
+			}
+			src++;
+			dst++;
+		}
+	}
+	while(arr.length>dst){
+		arr.pop();
+	}
+	return removes;
+}
