@@ -40,22 +40,6 @@ export function uintN(n:number,N:number):number{
 	return (n|0)&(0xFFFFFFFF>>>(32-(N|0)));
 }
 
-export function max(...arr:number[]):number|undefined{
-	let rst:number|undefined = undefined;
-	for(const n of arr){
-		rst = rst?Math.max(rst,n):n;
-	}
-	return rst;
-}
-
-export function min(...arr:number[]):number | undefined{
-	let rst:number|undefined = undefined;
-	for(const n of arr){
-		rst = rst?Math.min(rst,n):n;
-	}
-	return rst;
-}
-
 export function fix0Cycle(num:number,top:number):number{
 	while(num<0){
 		num += top;
@@ -102,4 +86,16 @@ export function toFixed(num:number,point:number,radix?:number):string{
 		const prelen = str.length-point;
 		return sign+str.substring(0,prelen)+"."+str.substring(prelen);
 	}
+}
+
+export function ceil(v1:number,v2:number){
+    v1 = Math.ceil(v1)|0;
+    v2 = Math.ceil(v2)|0;
+    return v1===v2?v1+1:v1<v2?v2:v1;
+}
+
+export function floor(v1:number,v2:number){
+    v1 = Math.floor(v1)|0;
+    v2 = Math.floor(v2)|0;
+    return v1===v2?v1-1:v1<v2?v1:v2;
 }

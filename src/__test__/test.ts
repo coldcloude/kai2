@@ -50,15 +50,19 @@ x.b.add();
 
 console.log(x.b.cs[0].p.cs[0].v);
 
+//demo as
+
+const a:unknown = 12;
+
+const b = a as Date;
+
+console.log(b.getTime);
+
 // tests
 
 import testAsyncLoader from "./test-loader.js";
 
 await testAsyncLoader();
-
-import testMath from "./test-math.js";
-
-testMath();
 
 import testRandom from "./test-math-random.js";
 
