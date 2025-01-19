@@ -60,38 +60,55 @@ console.log(b.getTime);
 
 // tests
 
+import { testListConcat, testListFindMid } from "./test-list.js";
+
+console.log(">>>>>>>>>>>>>>>>test list concat");
+testListConcat();
+
+console.log(">>>>>>>>>>>>>>>>test list find mid");
+testListFindMid();
+
 import testAsyncLoader from "./test-loader.js";
 
+console.log(">>>>>>>>>>>>>>>>test async loader");
 await testAsyncLoader();
 
 import testRandom from "./test-math-random.js";
 
+console.log(">>>>>>>>>>>>>>>>test random");
 testRandom();
 
 import testTree from "./test-tree.js";
 
+console.log(">>>>>>>>>>>>>>>>test tree");
 testTree();
 
 import testHashTable from "./test-hashtable.js";
 
+console.log(">>>>>>>>>>>>>>>>test hash table");
 testHashTable();
 
 import testIterator from "./test-iterator.js";
 
+console.log(">>>>>>>>>>>>>>>>test iterator");
 testIterator();
 
 import testDateFormat from "./test-date.js";
 
+console.log(">>>>>>>>>>>>>>>>test date format");
 testDateFormat();
 
 import testNormalDistribution from "./test-dist-norm.js";
 
+console.log(">>>>>>>>>>>>>>>>test normal distribution");
 testNormalDistribution();
 
 import testSerialize from "./test-serialize.js";
 
+console.log(">>>>>>>>>>>>>>>>test serialize");
 testSerialize();
 
 import testFormatXml from "./test-xml.js";
 
+console.log(">>>>>>>>>>>>>>>>test format xml");
 testFormatXml("D:\\test\\test.tmx");
