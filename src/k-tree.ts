@@ -649,3 +649,21 @@ export const bigintcmp = (a:bigint,b:bigint)=>{
 	const sign = a-b;
 	return sign===0n?0:sign<0?-1:1;
 };
+
+export class KNumTree<V> extends KAVLTree<number,V> {
+	constructor(){
+		super(numcmp);
+	}
+}
+
+export class KStrTree<V> extends KAVLTree<string,V> {
+	constructor(){
+		super(strcmp);
+	}
+}
+
+export class KBigIntTree<V> extends KAVLTree<bigint,V> {
+	constructor(){
+		super(bigintcmp);
+	}
+}

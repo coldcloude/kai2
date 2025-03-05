@@ -1,5 +1,5 @@
 import { arrayStream } from "./k-iterator.js";
-import { KAVLTree, numcmp } from "./k-tree.js";
+import { KNumTree } from "./k-tree.js";
 
 export type Histogram = {
     min: number,
@@ -56,7 +56,7 @@ export type PercentValue = {
 export function percents(poss:number[],...valss:number[][]):PercentValue[]{
     
     let size = 0;
-    const vset = new KAVLTree<number,number>(numcmp);
+    const vset = new KNumTree<number>();
     arrayStream(valss).flatMap((vals)=>arrayStream(vals)).foreach(function(v){
         if(!isNaN(v)){
             vset.compute(v,(kv)=>{
@@ -75,7 +75,7 @@ export function percents(poss:number[],...valss:number[][]):PercentValue[]{
         }
     });
 
-    const pset = new KAVLTree<number,number>(numcmp);
+    const pset = new KNumTree<number>();
     for(const pos of poss){
         const index = Math.max(0,Math.min(size-1,Math.round((size-1)*pos*0.01)|0));
         pset.set(index,pos);

@@ -1,5 +1,4 @@
-import { KHashTable, strhash } from "./k-hashtable.js";
-import { strcmp } from "./k-tree.js";
+import { KStrTable } from "./k-hashtable.js";
 
 export type KAHandler<T> = (v:T)=>Promise<void>;
 
@@ -22,7 +21,7 @@ function TaskId(id:string|number):string{
 }
 
 export class KARunner {
-    _taskMap = new KHashTable<string,Promise<void>>(strcmp,strhash);
+    _taskMap = new KStrTable<Promise<void>>();
 	_findDeps(deps:(number|string)[]){
 		const dts:Promise<void>[] = [];
 		for(const d of deps){

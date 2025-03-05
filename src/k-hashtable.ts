@@ -1,7 +1,7 @@
 import { KPair } from "./k.js";
 import { KMap } from "./k-map.js";
 import { KList, KListNode } from "./k-list.js";
-import { KAVLTree, KAVLTreeNode } from "./k-tree.js";
+import { bigintcmp, KAVLTree, KAVLTreeNode, numcmp, strcmp } from "./k-tree.js";
 
 type HashNode<K,V> = KListNode<KPair<K,V>>;
 
@@ -184,3 +184,21 @@ export const strhash = (str:string)=>{
 export const biginthash = (num:bigint)=>{
     return Number(num&0x7FFFFFFFn);
 };
+
+export class KNumTable<V> extends KHashTable<number,V> {
+    constructor(){
+        super(numcmp,numhash);
+    }
+}
+
+export class KStrTable<V> extends KHashTable<string,V> {
+    constructor(){
+        super(strcmp,strhash);
+    }
+}
+
+export class KBigIntTable<V> extends KHashTable<bigint,V> {
+    constructor(){
+        super(bigintcmp,biginthash);
+    }
+}
