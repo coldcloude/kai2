@@ -631,6 +631,10 @@ export class KAVLTree<K,V> extends KTree<K,V,KAVLTreeNode<K,V>> {
 		}
 		this.size--;
 	}
+	clear(): void {
+		this.size = 0;
+		this.root = null;
+	}
 }
 
 export const numcmp = (a:number,b:number)=>{

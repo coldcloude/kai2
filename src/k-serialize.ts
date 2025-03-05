@@ -77,10 +77,10 @@ export function deserializeMap<T>(obj:KObject,op:(v:KValue)=>T):KMap<string,T>{
     return map;
 }
 
-export function setFromArray<K>(arr:K[],cmp:(a:K,b:K)=>number,hash?:(k:K)=>number):KMap<K,void>{
-	const set = hash?new KHashTable<K,void>(cmp,hash):new KAVLTree<K,void>(cmp);
+export function setFromArray<K>(arr:K[],cmp:(a:K,b:K)=>number,hash?:(k:K)=>number):KMap<K,boolean>{
+	const set = hash?new KHashTable<K,boolean>(cmp,hash):new KAVLTree<K,boolean>(cmp);
     for(const k of arr){
-        set.set(k);
+        set.set(k,true);
     }
     return set;
 }
