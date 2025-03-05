@@ -1,7 +1,11 @@
 import { KHashTable, strhash } from "./k-hashtable.js";
 import { strcmp } from "./k-tree.js";
 
-async function run(op:()=>Promise<void>,deps:Promise<void>[]){
+export type KAHandler<T> = (v:T)=>Promise<void>;
+
+export type KAsync = KAHandler<void>;
+
+async function run(op:KAsync,deps:Promise<void>[]){
 	for(const dep of deps){
 		await dep;
 	}
@@ -28,7 +32,7 @@ export class KARunner {
 		}
 		return dts;
 	}
-    runTask(id:string|number,op:()=>Promise<void>,...deps:(number|string)[]){
+    runTask(id:string|number,op:KAsync,...deps:(number|string)[]){
         const tid = TaskId(id);
 		const dts = this._findDeps(deps);
 		this._taskMap.set(tid,run(op,dts));
@@ -39,13 +43,13 @@ export class KARunner {
     }
 }
 
-export async function KASequence(ops:(()=>Promise<void>)[]){
+export async function KASequence(ops:KAsync[]){
 	for(const op of ops){
 		await op();
 	}
 }
 
-export async function KAConcurrent(ops:(()=>Promise<void>)[]){
+export async function KAConcurrent(ops:KAsync[]){
 	const rst:Promise<void>[] = [];
 	for(const op of ops){
 		rst.push(op());
