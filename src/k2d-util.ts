@@ -1,7 +1,8 @@
 // @ts-check
 
 import { fix0Cycle,fix0Symmetric } from "./k-math.js";
-import { Vector2D,transform,inverse,scale,project } from "./k2d.js";
+import { KNumTree, numcmp } from "./k-tree.js";
+import { Vector2D,transform,inverse,scale,project, cross, dot } from "./k2d.js";
 
 export const TOLERANCE = 0.000001;
 
@@ -58,7 +59,9 @@ export function fixOriginDirection(ba:number,ea:number,overhead:number):number{
 	const e2oa = fixDirection(ea-da);
 	return fixAngle(b1oa-e2oa)<fixAngle(b2oa-e1oa)? b1oa:b2oa;
 }
-
+/**
+ * from (x1,y1),(x2,y2) to [A,B,C] in Ax+By+C=0
+ */
 export function buildLine(x1:number,y1:number,x2:number,y2:number):Vector2D{
 	return approx(x1*y2,x2*y1)? [y1,-x1,0]:transform(inverse([x1,x2,y1,y2,0,0]),[-1,-1,1]);
 }
@@ -310,4 +313,250 @@ export function overlapConvexCircle(c:Vector2D[],x:number,y:number,r:number):boo
 		}
 	}
 	return rr;
+}
+
+export function sideOf(x:number,y:number,x1:number,y1:number,x2:number,y2:number){
+	return cross([x2-x1,y2-y1],[x-x1,y-y1]);
+}
+
+export function onSegment(x:number,y:number,x1:number,y1:number,x2:number,y2:number,side?:number){
+	if(withinRange2(x,y,x1,y1,x2,y2)){
+		side = side===undefined?sideOf(x,y,x1,y1,x2,y2):side;
+		return approx(side,0);
+	}
+	else{
+		return false;
+	}
+}
+
+export function isCrossSegment(x11:number,y11:number,x12:number,y12:number,x21:number,y21:number,x22:number,y22:number,side11?:number,side12?:number,side21?:number,side22?:number):boolean{
+
+	// 排斥试验
+	if(Math.min(x11,x12)>Math.max(x21,x22)||Math.min(x21,x22)>Math.max(x11,x12)||Math.min(y11,y12)>Math.max(y21,y22)||Math.min(y21,y22)>Math.max(y11,y12)){
+		return false;
+	}
+
+	// 跨立试验
+    side11 = side11===undefined?sideOf(x21,y21,x11,y11,x12,y12):side11;
+    side12 = side12===undefined?sideOf(x22,y22,x11,y11,x12,y12):side12;
+    side21 = side21===undefined?sideOf(x11,y11,x21,y21,x22,y22):side21;
+    side22 = side22===undefined?sideOf(x12,y12,x21,y21,x22,y22):side22;
+    if((side11<0&&side12>0||side11>0&&side12<0)&&(side21<0&&side22>0||side12>0&&side22<0)){
+        return true;
+    }
+
+    // 检查端点是否在另一条线段上
+    return onSegment(x21,y21,x11,y11,x12,y12,side11)||onSegment(x22,y22,x11,y11,x12,y12,side12)||onSegment(x11,y11,x21,y21,x22,y22,side21)||onSegment(x12,y12,x21,y21,x22,y22,side22);
+}
+
+export function buildConvex(points:Vector2D[]):Vector2D[]{
+
+	//少于三个点无论怎样排列都是凸多边形
+	if(points.length<3){
+		return [...points];
+	}
+
+    // 找到最下且最左的点作为基准点
+	const pMap = new KNumTree<KNumTree<boolean>>();
+    for(const p of points){
+		pMap.computeIfAbsent(p[0],()=>new KNumTree<boolean>())!.set(p[1],true);
+    }
+	const pivot:Vector2D = [];
+	const sorted:Vector2D[] = [];
+	pMap.foreach((x,yMap)=>{
+		yMap.foreach((y)=>{
+			if(pivot.length<2){
+				pivot.push(x);
+				pivot.push(y);
+			}
+			else{
+				sorted.push([x,y]);
+			}
+		});
+	});
+
+    // 按极角排序，极角相同按距离排序
+    sorted.sort((a,b)=>{
+		const va = [a[0]-pivot[0],a[1]-pivot[1]];
+		const vb = [b[0]-pivot[0],b[1]-pivot[1]];
+        const angleA = Math.atan2(va[1],va[0]);
+        const angleB = Math.atan2(vb[1],vb[0]);
+		const sa = numcmp(angleA,angleB);
+        if(sa===0){
+			const distA = dot(va,va);
+			const distB = dot(vb,vb);
+			return numcmp(distA,distB);
+		}
+		else{
+			return sa;
+		}
+    });
+
+	//基准点既可以放在最前，又可以放在最后
+	sorted.push(pivot);
+
+    // Graham扫描：移除导致非左转的点
+    const stack = [];
+    for(const p of sorted){
+        while(stack.length>=2){
+            const top = stack[stack.length-1];
+            const nextTop = stack[stack.length-2];
+            const side = sideOf(nextTop[0],nextTop[1],top[0],top[1],p[0],p[1]);
+            if(side<=0){
+                stack.pop();
+            } else {
+                break;
+            }
+        }
+        stack.push(p);
+    }
+
+    return stack;
+}
+
+export function buildMovingRect(x1:number,y1:number,x2:number,y2:number,dx:number,dy:number):Vector2D[]{
+	const minX = Math.min(x1,x2);
+	const maxX = Math.max(x1,x2);
+	const minY = Math.min(y1,y2);
+	const maxY = Math.max(y1,y2);
+	if(dx===0&&dy===0){
+		return [[minX,minY],[maxX,minY],[maxX,maxY],[minX,maxY]];
+	}
+	else if(dx===0){
+		if(dy>0){
+			return [[minX,minY],[maxX,minY],[maxX,maxY+dy],[minX,maxY+dy]];
+		}
+		else{
+			return [[minX,minY+dy],[maxX,minY+dy],[maxX,maxY],[minX,maxY]];
+		}
+	}
+	else if(dy===0){
+		if(dx>0){
+			return [[minX,minY],[maxX+dx,minY],[maxX+dx,maxY],[minX,maxY]];
+		}
+		else{
+			return [[minX+dx,minY],[maxX,minY],[maxX,maxY],[minX+dx,maxY]];
+		}
+	}
+	else{
+		if(dx>0){
+			if(dy>0){
+				return [[minX,minY],[maxX,minY],[maxX+dx,minY+dy],[maxX+dx,maxY+dy],[minX+dx,maxY+dy],[minX,maxY]];
+			}
+			else{
+				return [[minX+dx,minY+dy],[maxX+dx,minY+dy],[maxX+dx,maxY+dy],[maxX,maxY],[minX,maxY],[minX,minY]];
+			}
+		}
+		else{
+			if(dy>0){
+				return [[minX,minY],[maxX,minY],[maxX,maxY],[maxX+dx,maxY+dy],[minX+dx,maxY+dy],[minX+dx,minY+dy]];
+			}
+			else{
+				return [[minX+dx,minY+dy],[maxX+dx,minY+dy],[maxX,minY],[maxX,maxY],[minX,maxY],[minX+dx,maxY+dy]];
+			}
+		}
+	}
+}
+
+export function checkConvex(polygon:Vector2D[]):boolean{
+	let first:number|undefined = undefined;
+	for(let i=0; i<polygon.length; i++){
+		const p0 = polygon[i];
+		const p1 = polygon[(i+1)%polygon.length];
+		const p2 = polygon[(i+2)%polygon.length];
+		const side = sideOf(p2[0],p2[1],p0[0],p0[1],p1[0],p1[1]);
+		if(first===undefined){
+			first = side;
+		}
+		else if(first<0&&side>0||first>0&&side<0){
+			return false;
+		}
+	}
+	return true;
+}
+
+export function withinConvex(x:number,y:number,polygon:Vector2D[],side0?:number):boolean{
+	switch(polygon.length){
+		case 0:
+			return false;
+		case 1:
+			return x===polygon[0][0]&&y===polygon[0][1];
+		case 2:
+			return onSegment(x,y,polygon[0][0],polygon[0][1],polygon[1][0],polygon[1][1]);
+		default:
+			side0 = side0===undefined?sideOf(polygon[2][0],polygon[2][1],polygon[0][0],polygon[0][1],polygon[1][0],polygon[1][1]):side0;
+			for(let i=0; i<polygon.length; i++){
+				const p0 = polygon[i];
+				const p1 = polygon[(i+1)%polygon.length];
+				const side = sideOf(x,y,p0[0],p0[1],p1[0],p1[1]);
+				if(side0<0&&side>0||side0>0&&side<0){
+					return false;
+				}
+			}
+			return true;
+	}
+}
+
+export function overlapSegmentConvex(x1:number,y1:number,x2:number,y2:number,polygon:Vector2D[]){
+	switch(polygon.length){
+		case 0:
+			return false;
+		case 1:
+			return onSegment(polygon[0][0],polygon[0][1],x1,y1,x2,y2);
+		case 2:
+			return isCrossSegment(polygon[0][0],polygon[0][1],polygon[1][0],polygon[1][1],x1,y1,x2,y2);
+		default:
+			// 检查是否有端点在多边形内部
+			if(withinConvex(x1,y1,polygon)||withinConvex(x2,y2,polygon)){
+				return true;
+			}
+			else{
+				//线段两个端点都在多边形外部，计算多边形每个点分别在线段的哪边
+				const sides:number[] = [];
+				// 检查线段与多边形的每一条边是否相交
+				for(const p of polygon){
+					sides.push(sideOf(p[0],p[1],x1,y1,x2,y2));
+				}
+				for(let i=0; i<sides.length; i++){
+					const i1 = (i+1)%sides.length;
+					const s0 = sides[i];
+					const s1 = sides[i1];
+					if(!(s0>0&&s1>0||s0<0&&s1<0)){
+						//找到跨立的两点，判断是否线段相交
+						if(isCrossSegment(x1,y1,x2,y2,polygon[i][0],polygon[i][1],polygon[i1][0],polygon[i1][1],s0,s1)){
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+	}
+}
+
+export function overlapConvexConvex(c1:Vector2D[],c2:Vector2D[]):boolean{
+	switch(c1.length){
+		case 0:
+			return false;
+		case 1:
+			return withinConvex(c1[0][0],c1[0][1],c2);
+		case 2:
+			return overlapSegmentConvex(c1[0][0],c1[0][1],c1[1][0],c1[1][1],c2);
+		default:
+			//两种情况：（1）一个完全在另一个内；（2）相交
+			if(withinConvex(c1[0][0],c1[0][1],c2)){
+				//1中找到一个点在2内，返回相交
+				return true;
+			}
+			else{
+				//1不可能完全在2内，因此两种情况：（1）2完全在1内；（2）相交
+				//两种情况均转化为，2的顶点中是否能找到一个在1内
+				const side0 = sideOf(c1[2][0],c1[2][1],c1[0][0],c1[0][1],c1[1][0],c1[1][1]);
+				for(const p of c2){
+					if(withinConvex(p[0],p[1],c1,side0)){
+						return true;
+					}
+				}
+				return false;
+			}
+	}
 }
