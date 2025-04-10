@@ -59,6 +59,11 @@ export function fixOriginDirection(ba:number,ea:number,overhead:number):number{
 	const e2oa = fixDirection(ea-da);
 	return fixAngle(b1oa-e2oa)<fixAngle(b2oa-e1oa)? b1oa:b2oa;
 }
+
+export function angleOf(x1:number,y1:number,x2:number,y2:number):number{
+	return Math.atan2(y2-y1,x2-x1);
+}
+
 /**
  * from (x1,y1),(x2,y2) to [A,B,C] in Ax+By+C=0
  */
@@ -180,7 +185,7 @@ export function crossSegmentArc(x1:number,y1:number,x2:number,y2:number,cx:numbe
 	const rst = crossPPLineCircle(x1,y1,x2,y2,cx,cy,cr,l);
 	const rst2:Vector2D[] = [];
 	for(const p of rst){
-		if(withinRange2(p[0],p[1],x1,y1,x2,y2)&&withinAngle(Math.atan2(p[1]-cy,p[0]-cx),ca,cda)){
+		if(withinRange2(p[0],p[1],x1,y1,x2,y2)&&withinAngle(angleOf(cx,cy,p[0],p[1]),ca,cda)){
 			rst2.push(p);
 		}
 	}
