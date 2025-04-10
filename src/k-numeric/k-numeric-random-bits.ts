@@ -43,11 +43,11 @@ export default abstract class BitsStreamGenerator implements RandomGenerator {
         const high = this.___next(26);
         const low = this.___next(26);
         //          0x1.0p-26d                0x1.0p-52d
-        return high*1.4901161193847656E-8+low*2.220446049250313e-16
+        return high*1.4901161193847656E-8+low*2.220446049250313e-16;
     }
     nextFloat():number{
         //                      0x1.0p-23f
-        return this.___next(23)*1.1920928955078125E-7;
+        return this.___next(23)*1.1920929E-7;
     }
     nextGaussian():number{
         if (isNaN(this.___nextGaussian)) {

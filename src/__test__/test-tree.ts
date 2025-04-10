@@ -1,4 +1,4 @@
-import Random from "../k-math-random.js";
+import { Random } from "../k-math-random.js";
 import { KBigIntTree } from "../k-tree.js";
 
 function validate(tree:KBigIntTree<void>):string|void{

@@ -10,6 +10,7 @@ export * from './k-serialize.js';
 export * from './k-statistic.js';
 export * from './k-math.js';
 export * from './k-math-random.js';
+export * from './k-sampler.js';
 export * from "./k-date.js";
 export * from './k-numeric.js';
 export * from './k-ip.js';
