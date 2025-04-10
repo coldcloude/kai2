@@ -21,6 +21,12 @@ export class KList<T> {
 		this.size = 0;
 	}
 
+	clear(){
+		this.head = null;
+		this.tail = null;
+		this.size = 0;
+	}
+
 	_adjust(node:KListNode<T>,prev:KListNode<T>|null,next:KListNode<T>|null){
 		node.prev = prev;
 		node.next = next;
