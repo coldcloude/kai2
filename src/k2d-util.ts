@@ -60,7 +60,13 @@ export function fixOriginDirection(ba:number,ea:number,overhead:number):number{
 	return fixAngle(b1oa-e2oa)<fixAngle(b2oa-e1oa)? b1oa:b2oa;
 }
 
-export function angleOf(x1:number,y1:number,x2:number,y2:number):number{
+export function distance(x1:number,y1:number,x2:number,y2:number):number{
+	const dx = x2-x1;
+	const dy = y2-y1;
+	return Math.sqrt(dx*dx+dy*dy);
+}
+
+export function angle(x1:number,y1:number,x2:number,y2:number):number{
 	return Math.atan2(y2-y1,x2-x1);
 }
 
@@ -121,11 +127,28 @@ export function withinEllipse(x:number,y:number,rx:number,ry:number):boolean{
 }
 
 export function overlapRange(a1:number,b1:number,a2:number,b2:number):boolean{
-	return withinRange(a1,a2,b2)||withinRange(b1,a2,b2)||withinAngle(a2,a1,b1)||withinRange(b2,a1,b1);
+	let min1,max1,min2,max2;
+	if(a1<b1){
+		min1 = a1-TOLERANCE;
+		max1 = b1+TOLERANCE;
+	}
+	else{
+		min1 = b1-TOLERANCE;
+		max1 = a1+TOLERANCE;
+	}
+	if(a2<b2){
+		min2 = a2-TOLERANCE;
+		max2 = b2+TOLERANCE;
+	}
+	else{
+		min2 = b2-TOLERANCE;
+		max2 = a2+TOLERANCE;
+	}
+	return min1<max2&&min2<max1;
 }
 
 export function overlapRange2(x11:number,y11:number,x12:number,y12:number,x21:number,y21:number,x22:number,y22:number):boolean{
-	return withinRange2(x11,y11,x21,y21,x22,y22)||withinRange2(x12,y12,x21,y21,x22,y22)||withinRange2(x21,y21,x11,y11,x12,y12)||withinRange2(x22,y22,x11,y11,x12,y12);
+	return overlapRange(x11,x12,x21,x22)&&overlapRange(y11,y12,y21,y22);
 }
 
 export function overlapAngle(a1:number,da1:number,a2:number,da2:number):boolean{
@@ -185,7 +208,7 @@ export function crossSegmentArc(x1:number,y1:number,x2:number,y2:number,cx:numbe
 	const rst = crossPPLineCircle(x1,y1,x2,y2,cx,cy,cr,l);
 	const rst2:Vector2D[] = [];
 	for(const p of rst){
-		if(withinRange2(p[0],p[1],x1,y1,x2,y2)&&withinAngle(angleOf(cx,cy,p[0],p[1]),ca,cda)){
+		if(withinRange2(p[0],p[1],x1,y1,x2,y2)&&withinAngle(angle(cx,cy,p[0],p[1]),ca,cda)){
 			rst2.push(p);
 		}
 	}
@@ -419,50 +442,6 @@ export function buildConvex(points:Vector2D[]):Vector2D[]{
     return stack;
 }
 
-export function buildMovingRect(x1:number,y1:number,x2:number,y2:number,dx:number,dy:number):Vector2D[]{
-	const minX = Math.min(x1,x2);
-	const maxX = Math.max(x1,x2);
-	const minY = Math.min(y1,y2);
-	const maxY = Math.max(y1,y2);
-	if(dx===0&&dy===0){
-		return [[minX,minY],[maxX,minY],[maxX,maxY],[minX,maxY]];
-	}
-	else if(dx===0){
-		if(dy>0){
-			return [[minX,minY],[maxX,minY],[maxX,maxY+dy],[minX,maxY+dy]];
-		}
-		else{
-			return [[minX,minY+dy],[maxX,minY+dy],[maxX,maxY],[minX,maxY]];
-		}
-	}
-	else if(dy===0){
-		if(dx>0){
-			return [[minX,minY],[maxX+dx,minY],[maxX+dx,maxY],[minX,maxY]];
-		}
-		else{
-			return [[minX+dx,minY],[maxX,minY],[maxX,maxY],[minX+dx,maxY]];
-		}
-	}
-	else{
-		if(dx>0){
-			if(dy>0){
-				return [[minX,minY],[maxX,minY],[maxX+dx,minY+dy],[maxX+dx,maxY+dy],[minX+dx,maxY+dy],[minX,maxY]];
-			}
-			else{
-				return [[minX+dx,minY+dy],[maxX+dx,minY+dy],[maxX+dx,maxY+dy],[maxX,maxY],[minX,maxY],[minX,minY]];
-			}
-		}
-		else{
-			if(dy>0){
-				return [[minX,minY],[maxX,minY],[maxX,maxY],[maxX+dx,maxY+dy],[minX+dx,maxY+dy],[minX+dx,minY+dy]];
-			}
-			else{
-				return [[minX+dx,minY+dy],[maxX+dx,minY+dy],[maxX,minY],[maxX,maxY],[minX,maxY],[minX+dx,maxY+dy]];
-			}
-		}
-	}
-}
-
 export function checkConvex(polygon:Vector2D[]):boolean{
 	let first:number|undefined = undefined;
 	for(let i=0; i<polygon.length; i++){
@@ -563,5 +542,106 @@ export function overlapConvexConvex(c1:Vector2D[],c2:Vector2D[]):boolean{
 				}
 				return false;
 			}
+	}
+}
+
+export function buildMovingPolygon(x1:number,y1:number,x2:number,y2:number,dx:number,dy:number):Vector2D[]{
+	let minX = Math.min(x1,x2);
+	let maxX = Math.max(x1,x2);
+	let minY = Math.min(y1,y2);
+	let maxY = Math.max(y1,y2);
+	const reverseX = dx<0;
+	const reverseY = dy<0;
+	if(reverseX){
+		minX = -maxX;
+		maxX = -minX;
+		dx = -dx;
+	}
+	if(reverseY){
+		minY = -maxY;
+		maxY = -minY;
+		dy = -dy;
+	}
+	const r:Vector2D[] = [];
+	if(dx===0&&dy===0){
+		r.push([minX,minY,1]);
+		r.push([maxX,minY,1]);
+		r.push([maxX,maxY,1]);
+		r.push([minX,maxY,1]);
+	}
+	else if(dx===0){
+		r.push([minX,minY,1]);
+		r.push([maxX,minY,1]);
+		r.push([maxX,maxY+dy,1]);
+		r.push([minX,maxY+dy,1]);
+	}
+	else if(dy===0){
+		r.push([minX,minY,1]);
+		r.push([maxX+dx,minY,1]);
+		r.push([maxX+dx,maxY,1]);
+		r.push([minX,maxY,1]);
+	}
+	else{
+		r.push([minX,maxY,1]);
+		r.push([minX,minY,1]);
+		r.push([maxX,minY,1]);
+		r.push([maxX+dx,minY+dy,1]);
+		r.push([maxX+dx,maxY+dy,1]);
+		r.push([minX+dx,maxY+dy,1]);
+	}
+	if(reverseX){
+		for(const v of r){
+			v[0] = -v[0];
+		}
+	}
+	if(reverseY){
+		for(const v of r){
+			v[1] = -v[1];
+		}
+	}
+	return r;
+}
+
+export function calculateMovingOverlapRatio(x1:number,x2:number,dx:number,x01:number,x02:number):number[]|undefined{
+	let minX = Math.min(x1,x2);
+	let maxX = Math.max(x1,x2);
+	let minX0 = Math.min(x01,x02);
+	let maxX0 = Math.max(x01,x02);
+	if(dx<0){
+		minX = -maxX;
+		maxX = -minX;
+		minX0 = -maxX0;
+		maxX0 = -minX0;
+		dx = -dx;
+	}
+    if (dx === 0) {
+        if(overlapRange(minX,maxX,minX0,maxX0)){
+			return [0,1];
+		}
+    } else {
+		if(overlapRange(minX,maxX+dx,minX0,maxX0)){
+			const din = minX0-maxX;
+			const dout = minX+dx-maxX0;
+			const tin = din<=0?0:din/dx;
+			const tout = dout<=0?1:1-dout/dx;
+			return [tin,tout];
+		}
+    }
+}
+
+/**
+ * 采用时间参数化的方式，找到每个轴方向上可能的碰撞时间，然后取最大的进入时间和最小的退出时间
+ */
+export function calculateMovingOverlapRatio2(x1:number,y1:number,x2:number,y2:number,dx:number,dy:number,x01:number,y01:number,x02:number,y02:number):number[]|undefined{
+	const tx = calculateMovingOverlapRatio(x1,x2,dx,x01,x02);
+	const ty = calculateMovingOverlapRatio(y1,y2,dy,y01,y02);
+	if(tx===undefined){
+		return ty;
+	}
+	else if(ty===undefined){
+		return tx;
+	}
+	else{
+		return [Math.max(tx[0],ty[0]),Math.min(tx[1],ty[1])];
 	}
 }

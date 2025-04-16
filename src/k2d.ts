@@ -13,6 +13,22 @@ export type Matrix2D = number[];
  */
 export type Vector2D = number[];
 
+export function add(v1:Vector2D,v2:Vector2D):Vector2D{
+	return [v1[0]+v2[0],v1[1]+v2[1]];
+}
+
+export function sub(v1:Vector2D,v2:Vector2D):Vector2D{
+	return [v1[0]-v2[0],v1[1]-v2[1]];
+}
+
+export function mul(v:Vector2D,d:number):Vector2D{
+	return [v[0]*d,v[1]*d];
+}
+
+export function div(v:Vector2D,d:number):Vector2D{
+	return [v[0]/d,v[1]/d];
+}
+
 export function dot(v1:Vector2D,v2:Vector2D):number{
 	return v1[0]*v2[0]+v1[1]*v2[1];
 }
