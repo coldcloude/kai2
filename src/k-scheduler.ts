@@ -1,5 +1,5 @@
-import { KList } from "./k-list";
-import { KNumTree } from "./k-tree";
+import { KList } from "./k-list.js";
+import { KNumTree } from "./k-tree.js";
 
 type TimeoutTask = {
     targetTime:number,
