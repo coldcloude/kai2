@@ -34,6 +34,258 @@ export function Bezier0Inverse(p1:number,p2:number,b?:(t:number) => number,d?:(t
 	};
 }
 
+export const EasingFunction = {} as {[key:string]:(x:number)=>number};
+
+export const EF_LINEAR = "linear";
+
+export const EF_IN_SINE = "in-sine";
+export const EF_OUT_SINE = "out-sine";
+export const EF_IN_OUT_SINE = "in-out-sine";
+
+export const EF_IN_QUAD = "in-quad";
+export const EF_OUT_QUAD = "out-quad";
+export const EF_IN_OUT_QUAD = "in-out-quad";
+
+export const EF_IN_CUBIC = "in-cubic";
+export const EF_OUT_CUBIC = "out-cubic";
+export const EF_IN_OUT_CUBIC = "in-out-cubic";
+
+export const EF_IN_QUART = "in-quart";
+export const EF_OUT_QUART = "out-quart";
+export const EF_IN_OUT_QUART = "in-out-quart";
+
+export const EF_IN_QUINT = "in-quint";
+export const EF_OUT_QUINT = "out-quint";
+export const EF_IN_OUT_QUINT = "in-out-quint";
+
+export const EF_IN_EXPO = "in-expo";
+export const EF_OUT_EXPO = "out-expo";
+export const EF_IN_OUT_EXPO = "in-out-expo";
+
+export const EF_IN_CIRC = "in-circ";
+export const EF_OUT_CIRC = "out-circ";
+export const EF_IN_OUT_CIRC = "in-out-circ";
+
+export const EF_IN_BACK = "in-back";
+export const EF_OUT_BACK = "out-back";
+export const EF_IN_OUT_BACK = "in-out-back";
+
+export const EF_IN_ELASTIC = "in-elastic";
+export const EF_OUT_ELASTIC = "out-elastic";
+export const EF_IN_OUT_ELASTIC = "in-out-elastic";
+
+export const EF_IN_BOUNCE = "in-bounce";
+export const EF_OUT_BOUNCE = "out-bounce";
+export const EF_IN_OUT_BOUNCE = "in-out-bounce";
+
+export const createEase = (ease:(x:number)=>number)=>{
+	return (x:number)=>{
+		return x===0?0:x===1?1:ease(x);
+	};
+};
+
+export const createEaseOut = (easeIn:(x:number)=>number)=>{
+	return (x:number)=>{
+		return x===0?0:x===1?1:1-easeIn(1-x);
+	};
+};
+
+export const createEaseIn = (easeOut:(x:number)=>number)=>{
+	return (x:number)=>{
+		return x===0?0:x===1?1:1-easeOut(1-x);
+	};
+};
+
+export const createEaseInOutFromIn = (easeIn:(x:number)=>number)=>{
+	return (x:number)=>{
+		return x===0?0:x===1?1:x<0.5?easeIn(x*2)*0.5:1-easeIn(2*(1-x))*0.5;
+	};
+};
+
+export const createEaseInOutFromOut = (easeOut:(x:number)=>number)=>{
+	return (x:number)=>{
+		return x===0?0:x===1?1:x<0.5?(1-easeOut(1-2*x))*0.5:(1+easeOut(1-2*(1-x)))*0.5;
+	};
+};
+
+export const easeLinear = (x:number)=>x;
+
+export const easeQuad = (x:number)=>{
+	return x*x;
+};
+
+export const easeCubic = (x:number)=>{
+	return x*x*x;
+};
+
+export const easeQuart = (x:number)=>{
+	x *= x;
+	return x*x;
+};
+
+export const easeQuint = (x:number)=>{
+	const x2 = x*x;
+	return x*x2*x2;
+};
+
+export const easeExpo = (x:number)=>{
+	return Math.pow(2,10*(x-1));
+};
+
+export const easeCirc = (x:number)=>{
+	return 1-Math.sqrt(1-x*x);
+};
+
+const easeBackTarget = (a:number,k:number)=>{
+	const a1 = a+1;
+	return 4*a*a*a-27*k*a1*a1;
+};
+
+const easeBackTargetDiff = (a:number,k:number)=>{
+	return 12*a*a-54*k*(a+1);
+};
+
+export const computeEaseBackConstant = (k:number)=>{
+	if(k===0.1){
+		return 1.70158;
+	}
+	else if(k===0.2){
+		return 2.59491;
+	}
+	else{
+		// 初始猜测值
+		let a = 1;
+		// 动态调整初始猜测，确保进入递增区间
+		while(easeBackTarget(a,k)<0){
+			a *= 2;
+		}
+		// 牛顿迭代主循环
+		for(let i=0; i<100; i++){
+			// 原函数
+			const f = easeBackTarget(a,k);
+			// 导函数
+			const df = easeBackTargetDiff(a,k);
+			// 避免除以零和数值不稳定
+			if(Math.abs(df)<1e-15){
+				break;
+			}
+			// 牛顿迭代公式
+			const delta = f / df;
+			a -= delta;
+			// 检查收敛条件
+			if (Math.abs(delta)<TOLERANCE){
+				break;
+			}
+			// 确保a保持正值
+			if(a<=0){
+				a = TOLERANCE;
+			}
+		}
+		return a;
+	}
+};
+
+export const createEaseBack = (k:number)=>{
+	const c = computeEaseBackConstant(k);
+	return (x:number)=>{
+		return x*x*((c+1)*x-c);
+	};
+};
+
+export const easeBack = createEaseBack(0.1);
+
+export const easeBack2 = createEaseBack(0.2);
+
+const PI_2 = Math.PI/2;
+const PI_2_3 = 2*Math.PI/3;
+const PI_4_9 = 4*Math.PI/9;
+
+export const easeSineOut = (x:number)=>{
+	return Math.sin(x*PI_2);
+};
+
+export const easeElastic = (x:number)=>{
+	return -Math.pow(2,10*(x-1))*Math.sin(10*(x-1)*PI_2_3-PI_2);
+};
+
+export const easeElastic2 = (x:number)=>{
+	return -Math.pow(2,10*(x-1))*Math.sin(10*(x-1)*PI_4_9-PI_2);
+};
+
+const EB_ID1 = 4/11;
+const EB_ID2 = 8/11;
+const EB_ID3 = 10/11;
+
+const EB_DID1 = 6/11;
+const EB_DID2 = 9/11;
+const EB_DID3 = 21/22;
+
+const EB_AD1 = 3/4;
+const EB_AD2 = 15/16;
+const EB_AD3 = 63/64;
+
+const EB_DD = 121/16;
+
+export const easeBounceOut = (x:number)=>{
+	if(x<EB_ID1){
+		return EB_DD*x*x;
+	}
+	else if(x<EB_ID2){
+		x -= EB_DID1;
+		return EB_DD*x*x+EB_AD1;
+	}
+	else if(x<EB_ID3){
+		x -= EB_DID2;
+		return EB_DD*x*x+EB_AD2;
+	}
+	else{
+		x -= EB_DID3;
+		return EB_DD*x*x+EB_AD3;
+	}
+};
+
+EasingFunction[EF_LINEAR] = easeLinear;
+
+EasingFunction[EF_IN_QUAD] = easeQuad;
+EasingFunction[EF_OUT_QUAD] = createEaseOut(easeQuad);
+EasingFunction[EF_IN_OUT_QUAD] = createEaseInOutFromIn(easeQuad);
+
+EasingFunction[EF_IN_CUBIC] = easeCubic;
+EasingFunction[EF_OUT_CUBIC] = createEaseOut(easeCubic);
+EasingFunction[EF_IN_OUT_CUBIC] = createEaseInOutFromIn(easeCubic);
+
+EasingFunction[EF_IN_QUART] = easeQuart;
+EasingFunction[EF_OUT_QUART] = createEaseOut(easeQuart);
+EasingFunction[EF_IN_OUT_QUART] = createEaseInOutFromIn(easeQuart);
+
+EasingFunction[EF_IN_QUINT] = easeQuint;
+EasingFunction[EF_OUT_QUINT] = createEaseOut(easeQuint);
+EasingFunction[EF_IN_OUT_QUINT] = createEaseInOutFromIn(easeQuint);
+
+EasingFunction[EF_IN_SINE] = createEaseIn(easeSineOut);
+EasingFunction[EF_OUT_SINE] = easeSineOut;
+EasingFunction[EF_IN_OUT_SINE] = createEaseInOutFromOut(easeSineOut);
+
+EasingFunction[EF_IN_EXPO] = createEase(easeExpo);
+EasingFunction[EF_OUT_EXPO] = createEaseOut(easeExpo);
+EasingFunction[EF_IN_OUT_EXPO] = createEaseInOutFromIn(easeExpo);
+
+EasingFunction[EF_IN_CIRC] = easeCirc;
+EasingFunction[EF_OUT_CIRC] = createEaseOut(easeCirc);
+EasingFunction[EF_IN_OUT_CIRC] = createEaseInOutFromIn(easeCirc);
+
+EasingFunction[EF_IN_BACK] = easeBack;
+EasingFunction[EF_OUT_BACK] = createEaseOut(easeBack);
+EasingFunction[EF_IN_OUT_BACK] = createEaseInOutFromIn(easeBack2);
+
+EasingFunction[EF_IN_ELASTIC] = createEase(easeElastic);
+EasingFunction[EF_OUT_ELASTIC] = createEaseOut(easeElastic);
+EasingFunction[EF_IN_OUT_ELASTIC] = createEaseInOutFromIn(easeElastic2);
+
+EasingFunction[EF_IN_BOUNCE] = createEaseIn(easeBounceOut);
+EasingFunction[EF_OUT_BOUNCE] = easeBounceOut;
+EasingFunction[EF_IN_OUT_BOUNCE] = createEaseInOutFromOut(easeBounceOut);
+
 export function deg2rad(deg:number):number{
 	return deg*Math.PI/180;
 }
@@ -74,7 +326,7 @@ export function angle(x1:number,y1:number,x2:number,y2:number):number{
  * from (x1,y1),(x2,y2) to [A,B,C] in Ax+By+C=0
  */
 export function buildLine(x1:number,y1:number,x2:number,y2:number):Vector2D{
-	return approx(x1*y2,x2*y1)? [y1,-x1,0]:transform(inverse([x1,x2,y1,y2,0,0]),[-1,-1,1]);
+	return approx(x1*y2,x2*y1)?[y1,-x1,0]:transform(inverse([x1,x2,y1,y2,0,0]),[-1,-1,1]);
 }
 
 export function withinRange(x:number,a:number,b:number):boolean{
