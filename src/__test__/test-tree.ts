@@ -1,7 +1,7 @@
 import Random from "../k-math-random.js";
-import { KAVLTree, bigintcmp } from "../k-tree.js";
+import { KBigIntTree } from "../k-tree.js";
 
-function validate<K,V>(tree:KAVLTree<K,V>):string|void{
+function validate(tree:KBigIntTree<void>):string|void{
     let error:string|void = undefined;
     let node = tree.getLeastNode();
     while(node!==undefined){
@@ -46,8 +46,8 @@ function validate<K,V>(tree:KAVLTree<K,V>):string|void{
     if(error){
         return error;
     }
-    let last:K|undefined = undefined;
-    let r = tree.foreach((k:K)=>{
+    let last:bigint|undefined = undefined;
+    let r = tree.foreach((k:bigint)=>{
         if(last===undefined){
             last = k;
         }
@@ -66,7 +66,7 @@ function validate<K,V>(tree:KAVLTree<K,V>):string|void{
         return error;
     }
     last = undefined;
-    r = tree.foreach((k:K)=>{
+    r = tree.foreach((k:bigint)=>{
         if(last===undefined){
             last = k;
         }
@@ -89,7 +89,7 @@ function validate<K,V>(tree:KAVLTree<K,V>):string|void{
 export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log(rnd.initSeed);
-    const tree = new KAVLTree<bigint,void>(bigintcmp);
+    const tree = new KBigIntTree<void>();
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;

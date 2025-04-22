@@ -70,7 +70,7 @@ export default abstract class RandomWell extends BitsStreamGenerator {
 
         const seeds:number[] = seed===undefined?
             seeding(random())
-        :typeof seed === typeof 1n?
+        :typeof seed === "bigint"?
             seeding(seed as bigint)
         :seed as number[];
 		

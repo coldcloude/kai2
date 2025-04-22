@@ -1,9 +1,8 @@
 import Random from "../k-math-random.js";
-import { bigintcmp } from "../k-tree.js";
-import { KHashTable,biginthash } from "../k-hashtable.js";
+import { KBigIntTable } from "../k-hashtable.js";
 import { KPair } from "../k.js";
 
-function validate(table:KHashTable<bigint,bigint>):string|void{
+function validate(table:KBigIntTable<bigint>):string|void{
     let error:string|void = undefined;
     let last:bigint|undefined = undefined;
     if(table.foreach((k:bigint,v:bigint)=>{
@@ -44,7 +43,7 @@ function validate(table:KHashTable<bigint,bigint>):string|void{
 export default function test(seed?:bigint){
     const rnd = new Random(seed);
     console.log(rnd.initSeed);
-    const table = new KHashTable<bigint,bigint>(bigintcmp,biginthash);
+    const table = new KBigIntTable<bigint>();
     let insertCorrect = 0;
     let insertWrong = 0;
     let deleteCorrect = 0;

@@ -1,6 +1,6 @@
 // @ts-check
 
-import { min,max,fix0Cycle,fix0Symmetric } from "./k-math.js";
+import { fix0Cycle,fix0Symmetric } from "./k-math.js";
 import { Vector2D,transform,inverse,scale,project } from "./k2d.js";
 
 export const TOLERANCE = 0.000001;
@@ -286,7 +286,7 @@ export function overlapConvex(c1:Vector2D[],c2:Vector2D[]):boolean{
 		for(const p of c2){
 			p2cx.push(project(p,l)[0]);
 		}
-		if(!overlapRange(min(...c1px)||0,max(...c1px)||0,min(...p2cx)||0,max(...p2cx)||0)){
+		if(!overlapRange(Math.min(...c1px)||0,Math.max(...c1px)||0,Math.min(...p2cx)||0,Math.max(...p2cx)||0)){
 			r = false;
 			break;
 		}
@@ -304,7 +304,7 @@ export function overlapConvexCircle(c:Vector2D[],x:number,y:number,r:number):boo
 			cpx.push(project(p,l)[xi]);
 		}
 		const cx = project([x,y,1],l)[xi];
-		if(!overlapRange(min(...cpx)||0,max(...cpx)||0,cx-r,cx+r)){
+		if(!overlapRange(Math.min(...cpx)||0,Math.max(...cpx)||0,cx-r,cx+r)){
 			rr = false;
 			break;
 		}

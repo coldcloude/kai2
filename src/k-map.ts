@@ -30,18 +30,74 @@ export abstract class KMap<K,V> {
 	contains(k:K){
         return this.getPair(k)!==undefined;
     }
+	containsAny(k:K|K[]){
+		for(const kk of k as K[]){
+			if(this.contains(kk)){
+				return true;
+			}
+		}
+		return false;
+	}
+	containsAll(k:K|K[]){
+		for(const kk of k as K[]){
+			if(!this.contains(kk)){
+				return false;
+			}
+		}
+		return true;
+	}
 	get(k:K,remove?:boolean,condition?:(k:K,v:V)=>boolean):V|undefined{
         const kvp = this.getPair(k,remove,condition);
         return kvp===undefined?undefined:kvp.value;
     }
+	computeIfAbsent(k:K,creator:(kk?:K)=>V|undefined):V|undefined{
+		const rkv = this.compute(k,kv=>{
+			if(kv===undefined){
+				const v = creator(k);
+				kv = v===undefined?undefined:{
+					key: k,
+					value: v
+				};
+			}
+			return kv;
+		});
+		return rkv===undefined?undefined:rkv.value;
+	}
 	abstract foreach(op:(k:K,v:V)=>boolean|void,reverse?:boolean):boolean;
 	abstract removeIf(pred:(k:K,v:V)=>boolean):void;
+	abstract clear():void;
+	keyToArray():K[]{
+		const arr:K[] = [];
+		this.foreach((k)=>{
+			arr.push(k);
+		});
+		return arr;
+	}
+	valueToArray():V[]{
+		const arr:V[] = [];
+		this.foreach((k,v)=>{
+			arr.push(v);
+		});
+		return arr;
+	}
+	entryToArray():[K,V][]{
+		const arr:[K,V][] = [];
+		this.foreach((k,v)=>{
+			arr.push([k,v]);
+		});
+		return arr;
+	}
+	fromArray(arr:[K,V][]){
+		for(const [k,v] of arr){
+			this.set(k,v);
+		}
+	}
 }
 
 export class KSingletonMap<K,V> extends KMap<K,V>{
 	key:K|undefined;
-	value:V;
-	constructor(k:K|undefined,v:V){
+	value:V|undefined;
+	constructor(k:K|undefined,v?:V){
 		super();
 		this.key = k;
 		this.value = v;
@@ -56,8 +112,8 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 			return undefined;
 		}
 		else{
-			const curr = {key:this.key,value:this.value};
-			if(testRemove(this.key,this.value,remove,condition)){
+			const curr = {key:this.key,value:this.value!};
+			if(testRemove(this.key,this.value!,remove,condition)){
 				this.remove();
 			}
 			return curr;
@@ -76,7 +132,7 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 		}
 		else{
 			//found, remove or replace
-			const curr = {key:this.key,value:this.value};
+			const curr = {key:this.key,value:this.value!};
 			const r = op(curr);
 			if(r===undefined){
 				this.remove();
@@ -90,15 +146,20 @@ export class KSingletonMap<K,V> extends KMap<K,V>{
 	}
 	foreach(op:(k:K,v:V)=>boolean|void):boolean {
 		if(this.key!==undefined){
-			return !!op(this.key,this.value);
+			return !!op(this.key,this.value!);
 		}
 		else{
 			return false;
 		}
 	}
 	removeIf(pred:(k:K,v:V)=>boolean):void {
-		if(this.key!==undefined&&pred(this.key,this.value)){
+		if(this.key!==undefined&&pred(this.key,this.value!)){
 			this.key = undefined;
 		}
+	}
+	clear(): void {
+		this.size = 0;
+		this.key = undefined;
+		this.value = undefined;
 	}
 }

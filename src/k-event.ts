@@ -1,6 +1,7 @@
+import { KAHandler } from "./k-async.js";
 import { KList } from "./k-list.js";
 
-export type KEventHandler = {
+export type KEventRegistry = {
 	cancel:()=>void
 };
 
@@ -8,13 +9,13 @@ export class KEvent<T> {
 
 	capacity:number|undefined;
 
-	handlers:KList<(v:T)=>void> = new KList();
+	handlers:KList<KAHandler<T>> = new KList();
 
 	constructor(capacity?:number){
 		this.capacity = capacity;
 	}
 
-	register(h:(v:T)=>void):KEventHandler{
+	register(h:KAHandler<T>):KEventRegistry{
 		const h$ = this.handlers.push(h);
 		if(this.capacity&&this.handlers.size>this.capacity){
 			this.handlers.shift();
@@ -26,16 +27,20 @@ export class KEvent<T> {
 		};
 	}
 
-	trigger(value:T){
-		this.handlers.foreach((h:(v:T)=>void)=>{
-			h(value);
+	async trigger(value:T):Promise<void>{
+		const ps:Promise<void>[] = [];
+		this.handlers.foreach((h:KAHandler<T>)=>{
+			ps.push(h(value));
 		});
+		for(const p of ps){
+			await p;
+		}
 	}
 
-	once(h:(v:T)=>void):KEventHandler{
+	once(h:KAHandler<T>):KEventRegistry{
 		const h$ = this.register((v)=>{
 			h$!.cancel();
-			h(v);
+			return h(v);
 		});
 		return h$;
 	}

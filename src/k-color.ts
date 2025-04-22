@@ -1,4 +1,4 @@
-import {min,max,fix0Cycle,fix0Symmetric,pad0} from './k-math.js';
+import {fix0Cycle,fix0Symmetric,pad0} from './k-math.js';
 
 export type Color3 = number[];
 
@@ -47,8 +47,8 @@ export function rgb2hsl(rgb:Color3):Color3{
 	const r = rgb[0];
 	const g = rgb[1];
 	const b = rgb[2];
-	const light = max(...rgb)||0;
-	const dark = min(...rgb)||0;
+	const light = Math.max(...rgb)||0;
+	const dark = Math.min(...rgb)||0;
 	const l = (light+dark)/2;
 	if(light!==dark){
 		const d = light-dark;

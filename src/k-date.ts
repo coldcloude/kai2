@@ -1,5 +1,5 @@
-import { KHashTable,strhash } from "./k-hashtable.js";
-import { KAVLTree,strcmp,numcmp } from "./k-tree.js";
+import { KStrTable } from "./k-hashtable.js";
+import { KNumTree } from "./k-tree.js";
 import { pad0 } from "./k-math.js";
 
 export const MS_OF_DAY = 1000*60*60*24;
@@ -12,7 +12,7 @@ type PartPattern = {
     format:(date:Date)=>string
 };
 
-const PART_PATTERN_MAP = new KHashTable<string,PartPattern>(strcmp,strhash);
+const PART_PATTERN_MAP = new KStrTable<PartPattern>();
 
 PART_PATTERN_MAP.set("yyyy",{
     length: 4,
@@ -93,7 +93,7 @@ PART_PATTERN_MAP.set("SSS",{
 
 export class DateFormat{
     pattern:string;
-    ps:KAVLTree<number,PartPattern> = new KAVLTree(numcmp);
+    ps:KNumTree<PartPattern> = new KNumTree();
     constructor(pattern:string){
         this.pattern = pattern;
         PART_PATTERN_MAP.foreach((p,pp)=>{

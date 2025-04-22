@@ -631,6 +631,10 @@ export class KAVLTree<K,V> extends KTree<K,V,KAVLTreeNode<K,V>> {
 		}
 		this.size--;
 	}
+	clear(): void {
+		this.size = 0;
+		this.root = null;
+	}
 }
 
 export const numcmp = (a:number,b:number)=>{
@@ -645,3 +649,21 @@ export const bigintcmp = (a:bigint,b:bigint)=>{
 	const sign = a-b;
 	return sign===0n?0:sign<0?-1:1;
 };
+
+export class KNumTree<V> extends KAVLTree<number,V> {
+	constructor(){
+		super(numcmp);
+	}
+}
+
+export class KStrTree<V> extends KAVLTree<string,V> {
+	constructor(){
+		super(strcmp);
+	}
+}
+
+export class KBigIntTree<V> extends KAVLTree<bigint,V> {
+	constructor(){
+		super(bigintcmp);
+	}
+}
